@@ -14627,6 +14627,116 @@
           "endPos": 23
         }
       ]
+    },
+    {
+      "text": "Hello",
+      "intent": "Greet",
+      "entities": []
+    },
+    {
+      "text": "Hi",
+      "intent": "Greet",
+      "entities": []
+    },
+    {
+      "text": "Hey",
+      "intent": "Greet",
+      "entities": []
+    },
+    {
+      "text": "Heya",
+      "intent": "Greet",
+      "entities": []
+    },
+    {
+      "text": "Hey there",
+      "intent": "Greet",
+      "entities": []
+    },
+    {
+      "text": "Morning!",
+      "intent": "Greet",
+      "entities": []
+    },
+    {
+      "text": "Good Morning",
+      "intent": "Greet",
+      "entities": []
+    },
+    {
+      "text": "Good Afternoon",
+      "intent": "Greet",
+      "entities": []
+    },
+    {
+      "text": "Good evening",
+      "intent": "Greet",
+      "entities": []
+    },
+    {
+      "text": "Hi there",
+      "intent": "Greet",
+      "entities": []
+    },
+    {
+      "text": "It's nice to meet you",
+      "intent": "Greet",
+      "entities": []
+    },
+    {
+      "text": "It's a pleasure to meet you",
+      "intent": "Greet",
+      "entities": []
+    },
+    {
+      "text": "How are things?",
+      "intent": "Greet",
+      "entities": []
+    },
+    {
+      "text": "G'day!",
+      "intent": "Greet",
+      "entities": []
+    },
+    {
+      "text": "Howdy!",
+      "intent": "Greet",
+      "entities": []
+    },
+    {
+      "text": "What's up?",
+      "intent": "Greet",
+      "entities": []
+    },
+    {
+      "text": "Sup?",
+      "intent": "Greet",
+      "entities": []
+    },
+    {
+      "text": "Yo!",
+      "intent": "Greet",
+      "entities": []
+    },
+    {
+      "text": "Bye",
+      "intent": "Quit",
+      "entities": []
+    },
+    {
+      "text": "See you",
+      "intent": "Quit",
+      "entities": []
+    },
+    {
+      "text": "Goodbye",
+      "intent": "Quit",
+      "entities": []
+    },
+    {
+      "text": "Good night",
+      "intent": "Quit",
+      "entities": []
     }
   ],
   "versionId": "0.1_upgraded",
