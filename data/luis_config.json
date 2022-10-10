@@ -19,11 +19,35 @@
         {
           "modelName": "datetimeV2",
           "isRequired": false
+        },
+        {
+          "modelName": "money",
+          "isRequired": false
+        },
+        {
+          "modelName": "geographyV2",
+          "isRequired": false
+        },
+        {
+          "modelName": "openDate",
+          "isRequired": false
+        },
+        {
+          "modelName": "closeDate",
+          "isRequired": false
+        },
+        {
+          "modelName": "budget",
+          "isRequired": false
         }
       ]
     },
     {
       "name": "Cancel",
+      "inherits": {
+        "domain_name": "Utilities",
+        "model_name": "Cancel"
+      },
       "features": []
     },
     {
@@ -83,33 +107,6 @@
           "isRequired": false
         }
       ]
-    },
-    {
-      "name": "Period",
-      "children": [
-        {
-          "name": "openDate",
-          "children": [],
-          "features": [
-            {
-              "modelName": "openDate",
-              "isRequired": false
-            }
-          ]
-        },
-        {
-          "name": "closeDate",
-          "children": [],
-          "features": [
-            {
-              "modelName": "closeDate",
-              "isRequired": false
-            }
-          ]
-        }
-      ],
-      "roles": [],
-      "features": []
     },
     {
       "name": "openDate",
@@ -205,553 +202,9 @@
       "roles": []
     }
   ],
-  "utterances": [
-    {
-      "text": "all of them",
-      "intent": "None",
-      "entities": []
-    },
-    {
-      "text": "book flight from london to paris on feb 14th",
-      "intent": "BookFlight",
-      "entities": [
-        {
-          "entity": "From",
-          "startPos": 17,
-          "endPos": 22,
-          "children": [
-            {
-              "entity": "Airport",
-              "startPos": 17,
-              "endPos": 22,
-              "children": []
-            }
-          ]
-        },
-        {
-          "entity": "To",
-          "startPos": 27,
-          "endPos": 31,
-          "children": [
-            {
-              "entity": "Airport",
-              "startPos": 27,
-              "endPos": 31,
-              "children": []
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "text": "book flight to berlin on feb 14th",
-      "intent": "BookFlight",
-      "entities": [
-        {
-          "entity": "To",
-          "startPos": 15,
-          "endPos": 20,
-          "children": [
-            {
-              "entity": "Airport",
-              "startPos": 15,
-              "endPos": 20,
-              "children": []
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "text": "book me a flight from dubai to delhi",
-      "intent": "BookFlight",
-      "entities": [
-        {
-          "entity": "From",
-          "startPos": 22,
-          "endPos": 26,
-          "children": [
-            {
-              "entity": "Airport",
-              "startPos": 22,
-              "endPos": 26,
-              "children": []
-            }
-          ]
-        },
-        {
-          "entity": "To",
-          "startPos": 31,
-          "endPos": 35,
-          "children": [
-            {
-              "entity": "Airport",
-              "startPos": 31,
-              "endPos": 35,
-              "children": []
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "text": "book me a flight from london to paris",
-      "intent": "BookFlight",
-      "entities": [
-        {
-          "entity": "From",
-          "startPos": 22,
-          "endPos": 27,
-          "children": [
-            {
-              "entity": "Airport",
-              "startPos": 22,
-              "endPos": 27,
-              "children": []
-            }
-          ]
-        },
-        {
-          "entity": "To",
-          "startPos": 32,
-          "endPos": 36,
-          "children": [
-            {
-              "entity": "Airport",
-              "startPos": 32,
-              "endPos": 36,
-              "children": []
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "text": "bye",
-      "intent": "Quit",
-      "entities": []
-    },
-    {
-      "text": "can i book a flight",
-      "intent": "BookFlight",
-      "entities": []
-    },
-    {
-      "text": "can i book a night?",
-      "intent": "None",
-      "entities": []
-    },
-    {
-      "text": "can i book an item?",
-      "intent": "None",
-      "entities": []
-    },
-    {
-      "text": "can you book me a movie ticket in london?",
-      "intent": "None",
-      "entities": []
-    },
-    {
-      "text": "can you book me a movie ticket?",
-      "intent": "None",
-      "entities": []
-    },
-    {
-      "text": "can you buy me a book?",
-      "intent": "None",
-      "entities": []
-    },
-    {
-      "text": "can you recommend a book?",
-      "intent": "None",
-      "entities": []
-    },
-    {
-      "text": "cancel",
-      "intent": "Cancel",
-      "entities": []
-    },
-    {
-      "text": "cancel app",
-      "intent": "Cancel",
-      "entities": []
-    },
-    {
-      "text": "cancel booking",
-      "intent": "Cancel",
-      "entities": []
-    },
-    {
-      "text": "cancel cancel",
-      "intent": "Cancel",
-      "entities": []
-    },
-    {
-      "text": "cancel it",
-      "intent": "Cancel",
-      "entities": []
-    },
-    {
-      "text": "cancel never mind",
-      "intent": "Cancel",
-      "entities": []
-    },
-    {
-      "text": "cancel that",
-      "intent": "Cancel",
-      "entities": []
-    },
-    {
-      "text": "cancel that one",
-      "intent": "Cancel",
-      "entities": []
-    },
-    {
-      "text": "canceled",
-      "intent": "Cancel",
-      "entities": []
-    },
-    {
-      "text": "cancelled",
-      "intent": "Cancel",
-      "entities": []
-    },
-    {
-      "text": "could you recommend a book for me?",
-      "intent": "None",
-      "entities": []
-    },
-    {
-      "text": "do nothing",
-      "intent": "Cancel",
-      "entities": []
-    },
-    {
-      "text": "don't do that",
-      "intent": "Cancel",
-      "entities": []
-    },
-    {
-      "text": "don't do that anymore",
-      "intent": "Cancel",
-      "entities": []
-    },
-    {
-      "text": "exit",
-      "intent": "Quit",
-      "entities": []
-    },
-    {
-      "text": "flight to paris",
-      "intent": "BookFlight",
-      "entities": [
-        {
-          "entity": "To",
-          "startPos": 10,
-          "endPos": 14,
-          "children": [
-            {
-              "entity": "Airport",
-              "startPos": 10,
-              "endPos": 14,
-              "children": []
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "text": "flight to paris from london on feb 14th",
-      "intent": "BookFlight",
-      "entities": [
-        {
-          "entity": "To",
-          "startPos": 10,
-          "endPos": 14,
-          "children": [
-            {
-              "entity": "Airport",
-              "startPos": 10,
-              "endPos": 14,
-              "children": []
-            }
-          ]
-        },
-        {
-          "entity": "From",
-          "startPos": 21,
-          "endPos": 26,
-          "children": [
-            {
-              "entity": "Airport",
-              "startPos": 21,
-              "endPos": 26,
-              "children": []
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "text": "fly from berlin to paris on may 5th",
-      "intent": "BookFlight",
-      "entities": [
-        {
-          "entity": "From",
-          "startPos": 9,
-          "endPos": 14,
-          "children": [
-            {
-              "entity": "Airport",
-              "startPos": 9,
-              "endPos": 14,
-              "children": []
-            }
-          ]
-        },
-        {
-          "entity": "To",
-          "startPos": 19,
-          "endPos": 23,
-          "children": [
-            {
-              "entity": "Airport",
-              "startPos": 19,
-              "endPos": 23,
-              "children": []
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "text": "forget about it",
-      "intent": "Cancel",
-      "entities": []
-    },
-    {
-      "text": "go away",
-      "intent": "Cancel",
-      "entities": []
-    },
-    {
-      "text": "go to paris",
-      "intent": "BookFlight",
-      "entities": [
-        {
-          "entity": "To",
-          "startPos": 6,
-          "endPos": 10,
-          "children": [
-            {
-              "entity": "Airport",
-              "startPos": 6,
-              "endPos": 10,
-              "children": []
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "text": "going from paris to berlin",
-      "intent": "BookFlight",
-      "entities": [
-        {
-          "entity": "From",
-          "startPos": 11,
-          "endPos": 15,
-          "children": [
-            {
-              "entity": "Airport",
-              "startPos": 11,
-              "endPos": 15,
-              "children": []
-            }
-          ]
-        },
-        {
-          "entity": "To",
-          "startPos": 20,
-          "endPos": 25,
-          "children": [
-            {
-              "entity": "Airport",
-              "startPos": 20,
-              "endPos": 25,
-              "children": []
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "text": "good afernoon",
-      "intent": "Greet",
-      "entities": []
-    },
-    {
-      "text": "good evening",
-      "intent": "Greet",
-      "entities": []
-    },
-    {
-      "text": "good morning",
-      "intent": "Greet",
-      "entities": []
-    },
-    {
-      "text": "hello",
-      "intent": "Greet",
-      "entities": []
-    },
-    {
-      "text": "hi",
-      "intent": "Greet",
-      "entities": []
-    },
-    {
-      "text": "i fly above the clouds",
-      "intent": "None",
-      "entities": []
-    },
-    {
-      "text": "i want them all",
-      "intent": "None",
-      "entities": []
-    },
-    {
-      "text": "i want to all of them",
-      "intent": "None",
-      "entities": []
-    },
-    {
-      "text": "i would like to buy a book",
-      "intent": "None",
-      "entities": []
-    },
-    {
-      "text": "i would like to read a book",
-      "intent": "None",
-      "entities": []
-    },
-    {
-      "text": "ignore",
-      "intent": "Cancel",
-      "entities": []
-    },
-    {
-      "text": "just cancel",
-      "intent": "Cancel",
-      "entities": []
-    },
-    {
-      "text": "just cancel it",
-      "intent": "Cancel",
-      "entities": []
-    },
-    {
-      "text": "never mind",
-      "intent": "Cancel",
-      "entities": []
-    },
-    {
-      "text": "never mind cancel",
-      "intent": "Cancel",
-      "entities": []
-    },
-    {
-      "text": "never mind cancel that",
-      "intent": "Cancel",
-      "entities": []
-    },
-    {
-      "text": "no cancel",
-      "intent": "Cancel",
-      "entities": []
-    },
-    {
-      "text": "no cancel cancel",
-      "intent": "Cancel",
-      "entities": []
-    },
-    {
-      "text": "no cancel it",
-      "intent": "Cancel",
-      "entities": []
-    },
-    {
-      "text": "no cancel that",
-      "intent": "Cancel",
-      "entities": []
-    },
-    {
-      "text": "no never mind",
-      "intent": "Cancel",
-      "entities": []
-    },
-    {
-      "text": "no no cancel",
-      "intent": "Cancel",
-      "entities": []
-    },
-    {
-      "text": "no no cancel it",
-      "intent": "Cancel",
-      "entities": []
-    },
-    {
-      "text": "nothing never mind",
-      "intent": "Cancel",
-      "entities": []
-    },
-    {
-      "text": "nothing please",
-      "intent": "Cancel",
-      "entities": []
-    },
-    {
-      "text": "oh cancel",
-      "intent": "Cancel",
-      "entities": []
-    },
-    {
-      "text": "please do nothing",
-      "intent": "Cancel",
-      "entities": []
-    },
-    {
-      "text": "quit",
-      "intent": "Cancel",
-      "entities": []
-    },
-    {
-      "text": "sorry, don't do it",
-      "intent": "Cancel",
-      "entities": []
-    },
-    {
-      "text": "travel to paris",
-      "intent": "BookFlight",
-      "entities": [
-        {
-          "entity": "To",
-          "startPos": 10,
-          "endPos": 14,
-          "children": [
-            {
-              "entity": "Airport",
-              "startPos": 10,
-              "endPos": 14,
-              "children": []
-            }
-          ]
-        }
-      ]
-    }
-  ],
+  "utterances": [],
   "versionId": "0.1_upgraded",
-  "name": "FlightBooking",
+  "name": "FlightBooking2",
   "desc": "A LUIS model that uses intent and entities.",
   "culture": "en-us",
   "tokenizerVersion": "1.0.0",
@@ -761,27 +214,7 @@
   "regex_features": [],
   "patterns": [
     {
-      "pattern": "travel from {From}",
-      "intent": "BookFlight"
-    },
-    {
-      "pattern": "go to {To}",
-      "intent": "BookFlight"
-    },
-    {
-      "pattern": "flight to {To}",
-      "intent": "BookFlight"
-    },
-    {
-      "pattern": "travel to {To}",
-      "intent": "BookFlight"
-    },
-    {
-      "pattern": "flight to {To} from {From} on {datetimeV2}",
-      "intent": "BookFlight"
-    },
-    {
-      "pattern": "flight from {From}",
+      "pattern": "book flight from {From} on {datetimeV2}",
       "intent": "BookFlight"
     },
     {
@@ -793,11 +226,23 @@
       "intent": "BookFlight"
     },
     {
+      "pattern": "flight to {To} from {From} on {datetimeV2}",
+      "intent": "BookFlight"
+    },
+    {
       "pattern": "book flight from {From} to {To} on {datetimeV2}",
       "intent": "BookFlight"
     },
     {
-      "pattern": "book flight to {To} on {datetimeV2}",
+      "pattern": "travel to {To}",
+      "intent": "BookFlight"
+    },
+    {
+      "pattern": "flight from {From}",
+      "intent": "BookFlight"
+    },
+    {
+      "pattern": "flight to {To}",
       "intent": "BookFlight"
     },
     {
@@ -805,7 +250,15 @@
       "intent": "BookFlight"
     },
     {
-      "pattern": "book flight from {From} on {datetimeV2}",
+      "pattern": "book flight to {To} on {datetimeV2}",
+      "intent": "BookFlight"
+    },
+    {
+      "pattern": "go to {To}",
+      "intent": "BookFlight"
+    },
+    {
+      "pattern": "travel from {From}",
       "intent": "BookFlight"
     }
   ],
