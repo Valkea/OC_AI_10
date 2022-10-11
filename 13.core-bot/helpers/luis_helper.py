@@ -53,6 +53,7 @@ class LuisHelper:
             )
 
             print(f"INTENT:{intent}")
+            print(recognizer_result)
 
             if intent == Intent.BOOK_FLIGHT.value:
                 result = BookingDetails()
@@ -73,9 +74,7 @@ class LuisHelper:
                         )
 
                 # --- Entity:From ---
-                from_entities = recognizer_result.entities.get("$instance", {}).get(
-                    "From", []
-                )
+                from_entities = recognizer_result.entities.get("$instance", {}).get("From", [] )
                 if len(from_entities) > 0:
 
                     # if recognizer_result.entities.get("From", [{"$instance": {}}])[0]["$instance"]:
@@ -86,21 +85,36 @@ class LuisHelper:
                             from_entities[0]["text"].capitalize()
                         )
 
+                # --- Entity:budget ---
+                budget_entities = recognizer_result.entities.get("$instance", {}).get("budget", [])
+                money_entities = recognizer_result.entities.get('money', [])
+
+                if len(budget_entities) > 0:
+                    result.budget = budget_entities[0]["text"]
+
+                    if len(money_entities) > 0:
+                        result.budget = money_entities[0]['number']
+                        result.currency = money_entities[0]['units']+"s"
+
+                print(f"result:{result}")
+
+
                 # --- Entity:datetime ---
                 # This value will be a TIMEX. And we are only interested in a Date so grab the first result and drop
                 # the Time part. TIMEX is a format that represents DateTime expressions that include some ambiguity.
                 # e.g. missing a Year.
-                date_entities = recognizer_result.entities.get("datetime", [])
-                if date_entities:
-                    timex = date_entities[0]["timex"]
+                # date_entities = recognizer_result.entities.get("datetime", [])
+                # if date_entities:
+                #     timex = date_entities[0]["timex"]
 
-                    if timex:
-                        datetime = timex[0].split("T")[0]
+                #     if timex:
+                #         datetime = timex[0].split("T")[0]
 
-                        result.travel_date = datetime
+                #         result.travel_date = datetime
 
-                else:
-                    result.travel_date = None
+                # else:
+                #     result.travel_date = None
+
 
         except Exception as exception:
             print(exception)
