@@ -8,7 +8,7 @@ from botbuilder.dialogs.prompts import ConfirmPrompt, TextPrompt, PromptOptions
 from botbuilder.core import MessageFactory
 from botbuilder.schema import InputHints
 from .cancel_and_help_dialog import CancelAndHelpDialog
-from .date_resolver_dialog import DateResolverDialog
+from .date_resolver_dialog import DateResolverDialog, openDateResolverDialog, closeDateResolverDialog
 
 
 class BookingDialog(CancelAndHelpDialog):
@@ -18,14 +18,17 @@ class BookingDialog(CancelAndHelpDialog):
         self.add_dialog(TextPrompt(TextPrompt.__name__))
         self.add_dialog(ConfirmPrompt(ConfirmPrompt.__name__))
         self.add_dialog(DateResolverDialog(DateResolverDialog.__name__))
+        self.add_dialog(openDateResolverDialog(openDateResolverDialog.__name__))
+        self.add_dialog(closeDateResolverDialog(closeDateResolverDialog.__name__))
         self.add_dialog(
             WaterfallDialog(
                 WaterfallDialog.__name__,
                 [
-                    self.destination_step,
                     self.origin_step,
+                    self.openDate_step,
+                    self.destination_step,
+                    self.closeDate_step,
                     self.budget_step,
-                    #self.travel_date_step,
                     self.confirm_step,
                     self.final_step,
                 ],
@@ -33,6 +36,56 @@ class BookingDialog(CancelAndHelpDialog):
         )
 
         self.initial_dialog_id = WaterfallDialog.__name__
+
+    async def origin_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
+        """
+        If an origin city has not been provided, prompt for one.
+        :param step_context:
+        :return DialogTurnResult:
+        """
+        booking_details = step_context.options
+
+        print(booking_details)
+
+        if booking_details.origin is None:
+            message_text = "From what city will you be travelling?"
+            prompt_message = MessageFactory.text(
+                message_text, message_text, InputHints.expecting_input
+            )
+            return await step_context.prompt(
+                TextPrompt.__name__, PromptOptions(prompt=prompt_message)
+            )
+        return await step_context.next(booking_details.origin)
+
+    async def openDate_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
+        """
+        If a departure date (openDate) has not been provided, prompt for one.
+        :param step_context:
+        :return DialogTurnResult:
+        """
+        booking_details = step_context.options
+
+        # Capture the response to the previous step's prompt
+        booking_details.origin = step_context.result
+
+        print(booking_details)
+
+        # if booking_details.openDate is None:
+        #     message_text = "When will you start your travel?"
+        #     prompt_message = MessageFactory.text(
+        #         message_text, message_text, InputHints.expecting_input
+        #     )
+        #     return await step_context.prompt(
+        #         TextPrompt.__name__, PromptOptions(prompt=prompt_message)
+        #     )
+        # return await step_context.next(booking_details.openDate)
+
+        if not booking_details.openDate or self.is_ambiguous(booking_details.openDate):
+            return await step_context.begin_dialog(
+                openDateResolverDialog.__name__, booking_details.openDate
+            )
+
+        return await step_context.next(booking_details.openDate)
 
     async def destination_step(
         self, step_context: WaterfallStepContext
@@ -44,6 +97,11 @@ class BookingDialog(CancelAndHelpDialog):
         """
         booking_details = step_context.options
 
+        # Capture the response to the previous step's prompt
+        booking_details.openDate = step_context.result
+
+        print(booking_details)
+
         if booking_details.destination is None:
             message_text = "Where would you like to travel to?"
             prompt_message = MessageFactory.text(
@@ -54,9 +112,9 @@ class BookingDialog(CancelAndHelpDialog):
             )
         return await step_context.next(booking_details.destination)
 
-    async def origin_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
+    async def closeDate_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
         """
-        If an origin city has not been provided, prompt for one.
+        If a return date (closeDate) has not been provided, prompt for one.
         :param step_context:
         :return DialogTurnResult:
         """
@@ -64,15 +122,25 @@ class BookingDialog(CancelAndHelpDialog):
 
         # Capture the response to the previous step's prompt
         booking_details.destination = step_context.result
-        if booking_details.origin is None:
-            message_text = "From what city will you be travelling?"
-            prompt_message = MessageFactory.text(
-                message_text, message_text, InputHints.expecting_input
+
+        print(booking_details)
+
+        # if booking_details.closeDate is None:
+        #     message_text = "When will you come back?"
+        #     prompt_message = MessageFactory.text(
+        #         message_text, message_text, InputHints.expecting_input
+        #     )
+        #     return await step_context.prompt(
+        #         TextPrompt.__name__, PromptOptions(prompt=prompt_message)
+        #     )
+
+        if not booking_details.closeDate or self.is_ambiguous(booking_details.closeDate):
+            return await step_context.begin_dialog(
+                closeDateResolverDialog.__name__, booking_details.closeDate
             )
-            return await step_context.prompt(
-                TextPrompt.__name__, PromptOptions(prompt=prompt_message)
-            )
-        return await step_context.next(booking_details.origin)
+
+        return await step_context.next(booking_details.closeDate)
+
 
     # async def travel_date_step(
     #     self, step_context: WaterfallStepContext
@@ -106,7 +174,9 @@ class BookingDialog(CancelAndHelpDialog):
         booking_details = step_context.options
 
         # Capture the results of the previous step
-        booking_details.origin = step_context.result
+        booking_details.closeDate = step_context.result
+
+        print(booking_details)
 
         if booking_details.budget is None:
             message_text = "What is your budget for this travel?"
@@ -130,10 +200,14 @@ class BookingDialog(CancelAndHelpDialog):
 
         # Capture the results of the previous step
         booking_details.budget = step_context.result
+
+        print(booking_details)
+
         message_text = (
             f"Please confirm, I have you traveling \n\n"
-            f"- then from: **{booking_details.destination}** to: **{booking_details.origin}**\n\n"
-            f"with a budget of **{booking_details.budget}** *{ booking_details.currency }*"
+            f"- from: **{booking_details.origin}** to: **{booking_details.destination}** on: *{booking_details.openDate}* \n\n"
+            f"- then from: **{booking_details.destination}** to: **{booking_details.origin}** on: *{booking_details.closeDate}* \n\n"
+            f"with a budget of **{booking_details.budget}** { booking_details.currency }"
         )
         prompt_message = MessageFactory.text(
             message_text, message_text, InputHints.expecting_input

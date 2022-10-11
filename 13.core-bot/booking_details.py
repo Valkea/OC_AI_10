@@ -10,8 +10,9 @@ class BookingDetails:
         origin: str = None,
         budget: int = None,
         currency: str = "",
-        travel_date: str = None,
-            unsupported_airports=None,
+        openDate: str = None,
+        closeDate: str = None,
+        unsupported_airports=None,
     ):
         if unsupported_airports is None:
             unsupported_airports = []
@@ -19,8 +20,9 @@ class BookingDetails:
         self.origin = origin
         self.budget = budget
         self.currency = currency
-        self.travel_date = travel_date
+        self.openDate = openDate
+        self.closeDate = closeDate
         self.unsupported_airports = unsupported_airports
 
     def __str__(self):
-        pprint(vars(self))
+        return str(vars(self))

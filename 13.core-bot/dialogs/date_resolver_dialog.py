@@ -16,7 +16,7 @@ from .cancel_and_help_dialog import CancelAndHelpDialog
 
 
 class DateResolverDialog(CancelAndHelpDialog):
-    def __init__(self, dialog_id: str = None):
+    def __init__(self, dialog_id: str = None, prompt_msg: str = None):
         super(DateResolverDialog, self).__init__(
             dialog_id or DateResolverDialog.__name__
         )
@@ -32,6 +32,7 @@ class DateResolverDialog(CancelAndHelpDialog):
             )
         )
 
+        self.prompt_msg = prompt_msg
         self.initial_dialog_id = WaterfallDialog.__name__ + "2"
 
     async def initial_step(
@@ -39,7 +40,11 @@ class DateResolverDialog(CancelAndHelpDialog):
     ) -> DialogTurnResult:
         timex = step_context.options
 
-        prompt_msg_text = "On what date would you like to travel?"
+        if self.prompt_msg is None:
+            prompt_msg_text = "On what date would you like to travel?"
+        else:
+            prompt_msg_text = self.prompt_msg
+
         prompt_msg = MessageFactory.text(
             prompt_msg_text, prompt_msg_text, InputHints.expecting_input
         )
@@ -78,3 +83,15 @@ class DateResolverDialog(CancelAndHelpDialog):
             return "definite" in Timex(timex).types
 
         return False
+
+
+class openDateResolverDialog(DateResolverDialog):
+    def __init__(self, dialog_id: str = None):
+        prompt_msg = "When will you start your travel ?"
+        super().__init__(dialog_id, prompt_msg)
+
+
+class closeDateResolverDialog(DateResolverDialog):
+    def __init__(self, dialog_id: str = None):
+        prompt_msg = "When will you come back ?"
+        super().__init__(dialog_id, prompt_msg)

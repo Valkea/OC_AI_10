@@ -96,6 +96,18 @@ class LuisHelper:
                         result.budget = money_entities[0]['number']
                         result.currency = money_entities[0]['units']+"s"
 
+                # --- Entity:openDate ---
+                openDate_entities = recognizer_result.entities.get("$instance", {}).get("openDate", [] )
+                if len(openDate_entities) > 0:
+                    if recognizer_result.entities["openDate"]:
+                        result.openDate = openDate_entities[0]["text"]
+
+                # --- Entity:closeDate ---
+                closeDate_entities = recognizer_result.entities.get("$instance", {}).get("closeDate", [] )
+                if len(closeDate_entities) > 0:
+                    if recognizer_result.entities["closeDate"]:
+                        result.closeDate = closeDate_entities[0]["text"]
+
                 print(f"result:{result}")
 
 
