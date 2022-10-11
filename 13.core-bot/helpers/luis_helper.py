@@ -1,5 +1,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
+
 from enum import Enum
 from typing import Dict
 from botbuilder.ai.luis import LuisRecognizer
@@ -10,9 +11,10 @@ from booking_details import BookingDetails
 
 class Intent(Enum):
     BOOK_FLIGHT = "BookFlight"
+    GREET = "Greet"
+    QUIT = "Quit"
     CANCEL = "Cancel"
-    GET_WEATHER = "GetWeather"
-    NONE_INTENT = "NoneIntent"
+    NONE_INTENT = "None"
 
 
 def top_intent(intents: Dict[Intent, dict]) -> TopIntent:
@@ -30,8 +32,7 @@ def top_intent(intents: Dict[Intent, dict]) -> TopIntent:
 class LuisHelper:
     @staticmethod
     async def execute_luis_query(
-        luis_recognizer: LuisRecognizer, turn_context: TurnContext
-    ) -> (Intent, object):
+        luis_recognizer: LuisRecognizer, turn_context: TurnContext) -> (Intent, object):
         """
         Returns an object with preformatted LUIS results for the bot's dialogs to consume.
         """
@@ -57,33 +58,35 @@ class LuisHelper:
                 result = BookingDetails()
 
                 # We need to get the result from the LUIS JSON which at every level returns an array.
-                to_entities = recognizer_result.entities.get("$instance", {}).get(
-                    "To", []
-                )
+
+                # --- Entity:To ---
+                to_entities = recognizer_result.entities.get("$instance", {}).get("To", [])
 
                 if len(to_entities) > 0:
-                    if recognizer_result.entities.get("To", [{"$instance": {}}])[0][
-                        "$instance"
-                    ]:
+
+                    # if recognizer_result.entities.get("To", [{"$instance": {}}])[0]["$instance"]:
+                    if recognizer_result.entities["To"]:
                         result.destination = to_entities[0]["text"].capitalize()
                     else:
                         result.unsupported_airports.append(
                             to_entities[0]["text"].capitalize()
                         )
 
+                # --- Entity:From ---
                 from_entities = recognizer_result.entities.get("$instance", {}).get(
                     "From", []
                 )
                 if len(from_entities) > 0:
-                    if recognizer_result.entities.get("From", [{"$instance": {}}])[0][
-                        "$instance"
-                    ]:
+
+                    # if recognizer_result.entities.get("From", [{"$instance": {}}])[0]["$instance"]:
+                    if recognizer_result.entities["From"]:
                         result.origin = from_entities[0]["text"].capitalize()
                     else:
                         result.unsupported_airports.append(
                             from_entities[0]["text"].capitalize()
                         )
 
+                # --- Entity:datetime ---
                 # This value will be a TIMEX. And we are only interested in a Date so grab the first result and drop
                 # the Time part. TIMEX is a format that represents DateTime expressions that include some ambiguity.
                 # e.g. missing a Year.
