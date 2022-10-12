@@ -16,7 +16,7 @@ from .cancel_and_help_dialog import CancelAndHelpDialog
 
 
 class DateResolverDialog(CancelAndHelpDialog):
-    def __init__(self, dialog_id: str = None, prompt_msg: str = None):
+    def __init__(self, dialog_id: str = None, prompt_msg: str = None, reprompt_msg: str = None):
         super(DateResolverDialog, self).__init__(
             dialog_id or DateResolverDialog.__name__
         )
@@ -33,6 +33,7 @@ class DateResolverDialog(CancelAndHelpDialog):
         )
 
         self.prompt_msg = prompt_msg
+        self.reprompt_msg = reprompt_msg
         self.initial_dialog_id = WaterfallDialog.__name__ + "2"
 
     async def initial_step(
@@ -49,8 +50,11 @@ class DateResolverDialog(CancelAndHelpDialog):
             prompt_msg_text, prompt_msg_text, InputHints.expecting_input
         )
 
-        reprompt_msg_text = "I'm sorry, for best results, please enter your travel date including the month, " \
-                            "day and year. "
+        if self.reprompt_msg is None:
+            reprompt_msg_text = "I'm sorry, for best results, please enter your travel date including the month, day and year. "
+        else:
+            reprompt_msg_text = self.reprompt_msg
+
         reprompt_msg = MessageFactory.text(
             reprompt_msg_text, reprompt_msg_text, InputHints.expecting_input
         )
@@ -88,10 +92,12 @@ class DateResolverDialog(CancelAndHelpDialog):
 class openDateResolverDialog(DateResolverDialog):
     def __init__(self, dialog_id: str = None):
         prompt_msg = "When will you start your travel ?"
-        super().__init__(dialog_id, prompt_msg)
+        reprompt_msg = "I'm sorry, for best results, please enter your **outbound travel** date including the **month**, **day** and **year**."
+        super().__init__(dialog_id, prompt_msg, reprompt_msg)
 
 
 class closeDateResolverDialog(DateResolverDialog):
     def __init__(self, dialog_id: str = None):
         prompt_msg = "When will you come back ?"
-        super().__init__(dialog_id, prompt_msg)
+        reprompt_msg = "I'm sorry, for best results, please enter your **return travel** date including the **month**, **day** and **year**."
+        super().__init__(dialog_id, prompt_msg, reprompt_msg)
