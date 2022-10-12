@@ -24,6 +24,7 @@ class MainDialog(ComponentDialog):
         super(MainDialog, self).__init__(MainDialog.__name__)
 
         self._luis_recognizer = luis_recognizer
+        self._booking_dialog = booking_dialog
         self._booking_dialog_id = booking_dialog.id
 
         self.add_dialog(TextPrompt(TextPrompt.__name__))
@@ -71,6 +72,9 @@ class MainDialog(ComponentDialog):
         intent, luis_result = await LuisHelper.execute_luis_query(
             self._luis_recognizer, step_context.context
         )
+
+        # Pass Luis to the booking dialog for further requests
+        self._booking_dialog.init_luis(self._luis_recognizer, step_context.context)
 
         if intent == Intent.BOOK_FLIGHT.value and luis_result:
             # Show a warning for Origin and Destination if we can't resolve them.

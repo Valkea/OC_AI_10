@@ -10,6 +10,10 @@ from botbuilder.schema import InputHints
 from .cancel_and_help_dialog import CancelAndHelpDialog
 from .date_resolver_dialog import DateResolverDialog, openDateResolverDialog, closeDateResolverDialog
 
+from botbuilder.ai.luis import LuisRecognizer
+from helpers.luis_helper import LuisHelper, Intent
+from botbuilder.core import TurnContext
+
 
 class BookingDialog(CancelAndHelpDialog):
     def __init__(self, dialog_id: str = None):
@@ -36,6 +40,34 @@ class BookingDialog(CancelAndHelpDialog):
         )
 
         self.initial_dialog_id = WaterfallDialog.__name__
+
+    def init_luis(self, luis_recognizer: LuisRecognizer, turn_context: TurnContext):
+        self.luis_recognizer = luis_recognizer
+        self.turn_context = turn_context
+
+        print("init_luis:", self.luis_recognizer, self.turn_context)
+
+    async def callLuis(self, text):
+        # Call LUIS and gather any potential booking details. (Note the TurnContext has the response to the prompt.)
+        self.turn_context.activity.text = text
+        intent, luis_result = await LuisHelper.execute_luis_query(
+            self.luis_recognizer, self.turn_context
+        )
+
+        print("answer:", intent, luis_result)
+        return intent, luis_result
+
+    async def parseLuis(self, attr, text):
+        intent, luis_result = await self.callLuis(text)
+        if type(attr) == list:
+            for a in attr:
+                value = getattr(luis_result, a, None)
+                print(f"On check {a} : {value}")
+                if value is not None:
+                    return value
+            return None
+        else:
+            return getattr(luis_result, attr, None)
 
     async def origin_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
         """
@@ -65,21 +97,18 @@ class BookingDialog(CancelAndHelpDialog):
         """
         booking_details = step_context.options
 
-        # Capture the response to the previous step's prompt
-        booking_details.origin = step_context.result
+        # Ask LUIS.ai to check the previous answer (if the field is empty)
+        if booking_details.origin is None:
+            origin_value = step_context.result
+            origin = await self.parseLuis(['origin', 'destination'], origin_value)
+            booking_details.origin = origin
 
-        print(booking_details)
+        # Ask again if the previous answer field is still empty
+        if booking_details.origin is None:
+            step_context.active_dialog.state["stepIndex"] = int(step_context.active_dialog.state["stepIndex"]) - 2
+            return await step_context.next(None)
 
-        # if booking_details.openDate is None:
-        #     message_text = "When will you start your travel?"
-        #     prompt_message = MessageFactory.text(
-        #         message_text, message_text, InputHints.expecting_input
-        #     )
-        #     return await step_context.prompt(
-        #         TextPrompt.__name__, PromptOptions(prompt=prompt_message)
-        #     )
-        # return await step_context.next(booking_details.openDate)
-
+        # Ask the starting date
         if not booking_details.openDate or self.is_ambiguous(booking_details.openDate):
             return await step_context.begin_dialog(
                 openDateResolverDialog.__name__, booking_details.openDate
@@ -120,48 +149,24 @@ class BookingDialog(CancelAndHelpDialog):
         """
         booking_details = step_context.options
 
-        # Capture the response to the previous step's prompt
-        booking_details.destination = step_context.result
+        # Ask LUIS.ai to check the previous answer (if the field is empty)
+        if booking_details.destination is None:
+            destination_value = step_context.result
+            destination = await self.parseLuis(['origin', 'destination'], destination_value)
+            booking_details.destination = destination
 
-        print(booking_details)
+        # Ask again if the previous answer field is still empty
+        if booking_details.destination is None:
+            step_context.active_dialog.state["stepIndex"] = int(step_context.active_dialog.state["stepIndex"]) - 2
+            return await step_context.next(None)
 
-        # if booking_details.closeDate is None:
-        #     message_text = "When will you come back?"
-        #     prompt_message = MessageFactory.text(
-        #         message_text, message_text, InputHints.expecting_input
-        #     )
-        #     return await step_context.prompt(
-        #         TextPrompt.__name__, PromptOptions(prompt=prompt_message)
-        #     )
-
+        # Ask the starting date
         if not booking_details.closeDate or self.is_ambiguous(booking_details.closeDate):
             return await step_context.begin_dialog(
                 closeDateResolverDialog.__name__, booking_details.closeDate
             )
 
         return await step_context.next(booking_details.closeDate)
-
-
-    # async def travel_date_step(
-    #     self, step_context: WaterfallStepContext
-    # ) -> DialogTurnResult:
-    #     """
-    #     If a travel date has not been provided, prompt for one.
-    #     This will use the DATE_RESOLVER_DIALOG.
-    #     :param step_context:
-    #     :return DialogTurnResult:
-    #     """
-    #     booking_details = step_context.options
-
-    #     # Capture the results of the previous step
-    #     booking_details.origin = step_context.result
-    #     if not booking_details.travel_date or self.is_ambiguous(
-    #         booking_details.travel_date
-    #     ):
-    #         return await step_context.begin_dialog(
-    #             DateResolverDialog.__name__, booking_details.travel_date
-    #         )
-    #     return await step_context.next(booking_details.travel_date)
 
     async def budget_step(
         self, step_context: WaterfallStepContext
