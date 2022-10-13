@@ -57,7 +57,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-t', "--text", type=str, required=True, help="The text we want to send to LUIS.ai")
-    parser.add_argument('--app_id', type=str, help="The LUIS.ai application ID")
+    parser.add_argument('--app_id', type=str, required=True, help="The LUIS.ai application ID")
 
     args = parser.parse_args()
 
