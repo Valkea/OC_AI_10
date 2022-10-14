@@ -3,9 +3,12 @@
 
 import time
 import uuid
+import sys
+import json
 
 from azure.cognitiveservices.language.luis.authoring import LUISAuthoringClient
-from azure.cognitiveservices.language.luis.authoring.models import ApplicationCreateObject
+from azure.cognitiveservices.language.luis.authoring.models import ApplicationCreateObject, WordListObject
+from azure.cognitiveservices.language.luis.authoring.models._models_py3 import ErrorResponseException
 from msrest.authentication import CognitiveServicesCredentials
 
 # IMPORT LUIS authoring KEY & ENDPOINT
@@ -21,18 +24,21 @@ except FileNotFoundError:
     exit(0)
 
 
-def get_grandchild_id(model, childName, grandChildName):
+def get_grandchild_id(model, childName, grandChildName=None):
 
     theseChildren = next(
         filter((lambda child: child.name == childName), model.children)
     )
-    theseGrandchildren = next(
-        filter((lambda child: child.name == grandChildName), theseChildren.children)
-    )
+    returnId = theseChildren
 
-    grandChildId = theseGrandchildren.id
+    if grandChildName is not None:
+        theseGrandchildren = next(
+            filter((lambda child: child.name == grandChildName), theseChildren.children)
+        )
 
-    return grandChildId
+        returnId = theseGrandchildren.id
+
+    return returnId
 
 
 class Authoring:
@@ -51,6 +57,8 @@ class Authoring:
 
     def create_app(self, appName, versionId, culture):
 
+        print("Create Entities ", end='')
+
         self.versionId = versionId
 
         appDefinition = ApplicationCreateObject(
@@ -58,81 +66,119 @@ class Authoring:
         )
 
         self.app_id = self.client.apps.add(appDefinition)
-        print(f"A LUIS.ai app with ID {self.app_id} was created")
+        print(f"--> a LUIS.ai app with ID {self.app_id} was created")
 
     def create_intent(self, intentName):
 
-        self.client.model.add_intent(self.app_id, self.versionId, intentName)
-
         print(f"Create Intent: {intentName}")
+        self.client.model.add_intent(self.app_id, self.versionId, intentName)
 
     def create_entities(self):
 
-        # --- Add Prebuilt entity
-        self.client.model.add_prebuilt(
-            self.app_id, self.versionId, prebuilt_extractor_names=["number"]
-        )
-
-        # --- Define machine-learned entity
-        mlEntityDefinition = [
-            {
-                "name": "Pizza",
-                "children": [{"name": "Quantity"}, {"name": "Type"}, {"name": "Size"}],
-            },
-            {"name": "Toppings", "children": [{"name": "Type"}, {"name": "Quantity"}]},
-        ]
-
-        modelId = self.client.model.add_entity(
-            self.app_id, self.versionId, name="Pizza order", children=mlEntityDefinition
-        )
-
-        # --- Define phraselist - add phrases as significant vocabulary to app
-        phraseList = {
-            "enabledForAllModels": False,
-            "isExchangeable": True,
-            "name": "QuantityPhraselist",
-            "phrases": "few,more,extra",
-        }
-
-        phraseListId = self.client.features.add_phrase_list(
-            self.app_id, self.versionId, phraseList
-        )
-
-        # --- Get entity and subentities
-        modelObject = self.client.model.get_entity(self.app_id, self.versionId, modelId)
-        toppingQuantityId = get_grandchild_id(modelObject, "Toppings", "Quantity")
-        pizzaQuantityId = get_grandchild_id(modelObject, "Pizza", "Quantity")
-
-        # --- Add model as feature to subentity model
-        prebuiltFeatureRequiredDefinition = {
-            "model_name": "number",
-            "is_required": True,
-        }
-        self.client.features.add_entity_feature(
-            self.app_id, self.versionId, pizzaQuantityId, prebuiltFeatureRequiredDefinition
-        )
-
-        # --- Add model as feature to subentity model
-        prebuiltFeatureNotRequiredDefinition = {"model_name": "number"}
-        self.client.features.add_entity_feature(
-            self.app_id,
-            self.versionId,
-            toppingQuantityId,
-            prebuiltFeatureNotRequiredDefinition,
-        )
-
-        # --- Add phrase list as feature to subentity model
-        phraseListFeatureDefinition = {
-            "feature_name": "QuantityPhraselist",
-            "model_name": None,
-        }
-        self.client.features.add_entity_feature(
-            self.app_id, self.versionId, toppingQuantityId, phraseListFeatureDefinition
-        )
-
         print("Create Entities")
 
-    def add_trainings(self, training_json):
+        # --- Add Prebuilt entities
+        self.client.model.add_prebuilt(
+            self.app_id,
+            self.versionId,
+            prebuilt_extractor_names=["money", "geographyV2", "datetimeV2"],
+        )
+
+        # --- Add Closed list entities
+        airports = [
+            WordListObject(canonical_form='New York', list=['NY', "New York", "New-York", "NewYork", "new york", "new-york", "newyork", 'NEW YORK', 'NEW-YORK', 'NEWYORK']),
+            WordListObject(canonical_form='Paris', list=['paris', 'PARIS']),
+            WordListObject(canonical_form='London', list=['london', 'LONDON', 'Londres', 'londres', 'LONDRES']),
+            WordListObject(canonical_form='Milan', list=['milan', 'MILAN']),
+        ]
+
+        self.client.model.add_closed_list(
+            self.app_id,
+            self.versionId,
+            sub_lists=airports,
+            name="Airport",
+            custom_headers=None,
+            raw=False,
+        )
+
+        # --- Add Machine-learned entities
+        mlEntityDefinition = [{"name": "Airport", "children": []}]
+
+        ent_From = self.client.model.add_entity(
+            self.app_id, self.versionId, name="From", children=mlEntityDefinition
+        )
+        ent_To = self.client.model.add_entity(
+            self.app_id, self.versionId, name="To", children=mlEntityDefinition
+        )
+        ent_openDate = self.client.model.add_entity(
+            self.app_id, self.versionId, name="openDate", children=None
+        )
+        ent_closeDate = self.client.model.add_entity(
+            self.app_id, self.versionId, name="closeDate", children=None
+        )
+        ent_budget = self.client.model.add_entity(
+            self.app_id, self.versionId, name="budget", children=None
+        )
+
+        # --- Add model as feature to subentity models
+        self.client.features.add_entity_feature(
+            self.app_id, self.versionId, ent_From,
+            {"model_name": "geographyV2", "is_required": False}
+        )
+
+        self.client.features.add_entity_feature(
+            self.app_id, self.versionId, ent_To,
+            {"model_name": "geographyV2", "is_required": False}
+        )
+
+        self.client.features.add_entity_feature(
+            self.app_id, self.versionId, ent_openDate,
+            {"model_name": "datetimeV2", "is_required": False}
+        )
+
+        self.client.features.add_entity_feature(
+            self.app_id, self.versionId, ent_closeDate,
+            {"model_name": "datetimeV2", "is_required": False}
+        )
+
+        self.client.features.add_entity_feature(
+            self.app_id, self.versionId, ent_budget,
+            {"model_name": "money", "is_required": False}
+        )
+
+        # --- Get entity and subentities & set features
+        modelObject = self.client.model.get_entity(self.app_id, self.versionId, ent_From)
+        ent_FromAirport = get_grandchild_id(modelObject, "Airport").id
+
+        self.client.features.add_entity_feature(
+            self.app_id, self.versionId, ent_FromAirport,
+            {"model_name": "Airport", "is_required": True}
+        )
+
+        modelObject = self.client.model.get_entity(self.app_id, self.versionId, ent_To)
+        ent_ToAirport = get_grandchild_id(modelObject, "Airport").id
+
+        self.client.features.add_entity_feature(
+            self.app_id, self.versionId, ent_ToAirport,
+            {"model_name": "Airport", "is_required": True}
+        )
+
+    def _load_training_json(self, training_json_path):
+
+        try:
+            with open(training_json_path) as file:
+                return json.load(file)
+        except FileNotFoundError as e:
+            print(e)
+            exit(0)
+
+    def _split_training_json(self, training_json, step_size=100):
+        for index in range(0, len(training_json), step_size):
+            yield training_json[index:index+step_size]
+
+    def add_training(self, training_json):
+
+        print("Push one training sample")
 
         # Enable nested children to allow using multiple models with the same name.
         self.client.examples.add(
@@ -142,7 +188,23 @@ class Authoring:
             {"enableNestedChildren": True},
         )
 
-        print("Push Trainings")
+    def add_trainings(self, training_json_path):
+
+        print(f"Push a batch of training samples from {training_json_path}")
+
+        batch_size = 100
+        training_json = self._load_training_json(training_json_path)
+        for i, subbatch in enumerate(self._split_training_json(training_json, batch_size)):
+
+            print(f"--> send batch #{i} [from {i*batch_size} to {(i+1)*batch_size}]")
+
+            # Enable nested children to allow using multiple models with the same name.
+            self.client.examples.batch(
+                self.app_id,
+                self.versionId,
+                subbatch,
+                {"enableNestedChildren": True},
+            )
 
     def train_model(self):
         # get_status returns a list of training statuses, one for each model.
@@ -150,7 +212,7 @@ class Authoring:
 
         self.client.train.train_version(self.app_id, self.versionId)
         waiting = True
-        print("Traing ", end='')
+        print("Traing ", end="", flush=True)
         while waiting:
             info = self.client.train.get_status(self.app_id, self.versionId)
 
@@ -163,7 +225,7 @@ class Authoring:
             )
 
             if waiting:
-                print(".", end='')
+                print(".", end="", flush=True)
                 time.sleep(1)
             else:
                 print(" done!")
@@ -172,82 +234,39 @@ class Authoring:
     def publish(self):
         # Mark the app as public so we can query it using any prediction endpoint.
         # Note: For production scenarios, we need to use the LUIS prediction endpoint.
-        self.client.apps.update_settings(self.app_id, is_public=True)
 
-        responseEndpointInfo = self.client.apps.publish(
-            self.app_id, self.versionId, is_staging=False
-        )
-        print(f"Publish: {responseEndpointInfo}")
+        print("Publish ", end='', flush=True)
+
+        try:
+            self.client.apps.update_settings(self.app_id, is_public=True)
+
+            responseEndpointInfo = self.client.apps.publish(
+                self.app_id, self.versionId, is_staging=False
+            )
+
+            print(responseEndpointInfo)
+        except ErrorResponseException as e:
+            print(f"publish error: {e}")
 
 
 if __name__ == "__main__":
 
+    if len(sys.argv) == 1:
+        print("Please provide the path to the JSON file containing the training uterrances")
+        exit(0)
+
     authoring = Authoring()
-    appName = "Contoso Pizza Company " + str(uuid.uuid4())  # We use a UUID to avoid name collisions.
-    versionId = "0.1"
-    culture = "en-us"
-    intentName = "OrderPizzaIntent"
-    training_json = "Blop"
-
-    # Define labeled example
-    labeledExampleUtteranceWithMLEntity = {
-        "text": "I want two small seafood pizzas with extra cheese.",
-        "intentName": intentName,
-        "entityLabels": [
-            {
-                "startCharIndex": 7,
-                "endCharIndex": 48,
-                "entityName": "Pizza order",
-                "children": [
-                    {
-                        "startCharIndex": 7,
-                        "endCharIndex": 30,
-                        "entityName": "Pizza",
-                        "children": [
-                            {
-                                "startCharIndex": 7,
-                                "endCharIndex": 9,
-                                "entityName": "Quantity",
-                            },
-                            {
-                                "startCharIndex": 11,
-                                "endCharIndex": 15,
-                                "entityName": "Size",
-                            },
-                            {
-                                "startCharIndex": 17,
-                                "endCharIndex": 23,
-                                "entityName": "Type",
-                            },
-                        ],
-                    },
-                    {
-                        "startCharIndex": 37,
-                        "endCharIndex": 48,
-                        "entityName": "Toppings",
-                        "children": [
-                            {
-                                "startCharIndex": 37,
-                                "endCharIndex": 41,
-                                "entityName": "Quantity",
-                            },
-                            {
-                                "startCharIndex": 43,
-                                "endCharIndex": 48,
-                                "entityName": "Type",
-                            },
-                        ],
-                    },
-                ],
-            }
-        ],
-    }
-
+    appName = "FlightBooking " + str(
+        uuid.uuid4()
+    )  # We use a UUID to avoid name collisions.
 
     authoring.connect()
-    authoring.create_app(appName, versionId, culture)
-    authoring.create_intent(intentName)
+    authoring.create_app(appName, "0.1", "en-us")
+    authoring.create_intent("BookFlight")
+    # authoring.create_intent("Cancel")
+    authoring.create_intent("Greet")
+    authoring.create_intent("Quit")
     authoring.create_entities()
-    authoring.add_trainings(labeledExampleUtteranceWithMLEntity)
+    authoring.add_trainings(sys.argv[1])
     authoring.train_model()
     authoring.publish()
