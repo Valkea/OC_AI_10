@@ -163,6 +163,12 @@ class Authoring:
             {"model_name": "Airport", "is_required": True}
         )
 
+        # --- Add patterns
+        # TODO
+
+        # --- Add Phraselist
+        # TODO
+
     def _load_training_json(self, training_json_path):
 
         try:
@@ -212,7 +218,7 @@ class Authoring:
 
         self.client.train.train_version(self.app_id, self.versionId)
         waiting = True
-        print("Traing ", end="", flush=True)
+        print("Training ", end="", flush=True)
         while waiting:
             info = self.client.train.get_status(self.app_id, self.versionId)
 
