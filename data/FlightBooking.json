@@ -19,11 +19,35 @@
         {
           "modelName": "datetimeV2",
           "isRequired": false
+        },
+        {
+          "modelName": "money",
+          "isRequired": false
+        },
+        {
+          "modelName": "geographyV2",
+          "isRequired": false
+        },
+        {
+          "modelName": "openDate",
+          "isRequired": false
+        },
+        {
+          "modelName": "closeDate",
+          "isRequired": false
+        },
+        {
+          "modelName": "budget",
+          "isRequired": false
         }
       ]
     },
     {
       "name": "Cancel",
+      "inherits": {
+        "domain_name": "Utilities",
+        "model_name": "Cancel"
+      },
       "features": []
     },
     {
@@ -83,33 +107,6 @@
           "isRequired": false
         }
       ]
-    },
-    {
-      "name": "Period",
-      "children": [
-        {
-          "name": "openDate",
-          "children": [],
-          "features": [
-            {
-              "modelName": "openDate",
-              "isRequired": false
-            }
-          ]
-        },
-        {
-          "name": "closeDate",
-          "children": [],
-          "features": [
-            {
-              "modelName": "closeDate",
-              "isRequired": false
-            }
-          ]
-        }
-      ],
-      "roles": [],
-      "features": []
     },
     {
       "name": "openDate",
@@ -14740,7 +14737,7 @@
     }
   ],
   "versionId": "0.1_upgraded",
-  "name": "FlightBooking",
+  "name": "FlightBooking2",
   "desc": "A LUIS model that uses intent and entities.",
   "culture": "en-us",
   "tokenizerVersion": "1.0.0",
@@ -14750,27 +14747,7 @@
   "regex_features": [],
   "patterns": [
     {
-      "pattern": "travel from {From}",
-      "intent": "BookFlight"
-    },
-    {
-      "pattern": "go to {To}",
-      "intent": "BookFlight"
-    },
-    {
-      "pattern": "flight to {To}",
-      "intent": "BookFlight"
-    },
-    {
-      "pattern": "travel to {To}",
-      "intent": "BookFlight"
-    },
-    {
-      "pattern": "flight to {To} from {From} on {datetimeV2}",
-      "intent": "BookFlight"
-    },
-    {
-      "pattern": "flight from {From}",
+      "pattern": "book flight from {From} on {datetimeV2}",
       "intent": "BookFlight"
     },
     {
@@ -14782,11 +14759,23 @@
       "intent": "BookFlight"
     },
     {
+      "pattern": "flight to {To} from {From} on {datetimeV2}",
+      "intent": "BookFlight"
+    },
+    {
       "pattern": "book flight from {From} to {To} on {datetimeV2}",
       "intent": "BookFlight"
     },
     {
-      "pattern": "book flight to {To} on {datetimeV2}",
+      "pattern": "travel to {To}",
+      "intent": "BookFlight"
+    },
+    {
+      "pattern": "flight from {From}",
+      "intent": "BookFlight"
+    },
+    {
+      "pattern": "flight to {To}",
       "intent": "BookFlight"
     },
     {
@@ -14794,7 +14783,15 @@
       "intent": "BookFlight"
     },
     {
-      "pattern": "book flight from {From} on {datetimeV2}",
+      "pattern": "book flight to {To} on {datetimeV2}",
+      "intent": "BookFlight"
+    },
+    {
+      "pattern": "go to {To}",
+      "intent": "BookFlight"
+    },
+    {
+      "pattern": "travel from {From}",
       "intent": "BookFlight"
     }
   ],
