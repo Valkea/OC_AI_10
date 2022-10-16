@@ -154,12 +154,12 @@ def init_func(argv):
     APP = web.Application(middlewares=[aiohttp_error_middleware])
     APP.router.add_post("/api/messages", messages)
     APP.router.add_get("", home)
+    APP = setup_middlewares(APP)
     return APP
 
 
 if __name__ == "__main__":
     APP = init_func(None)
-    APP = setup_middlewares(APP)
 
     try:
         web.run_app(APP, host="localhost", port=CONFIG.PORT)
