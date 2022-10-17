@@ -54,7 +54,7 @@ class BookingDialog(CancelAndHelpDialog):
             self.luis_recognizer, self.turn_context
         )
 
-        print("answer:", intent, luis_result)
+        # print("answer:", intent, luis_result)
         return intent, luis_result
 
     async def parseLuis(self, attr, text):
@@ -62,7 +62,7 @@ class BookingDialog(CancelAndHelpDialog):
         if type(attr) == list:
             for a in attr:
                 value = getattr(luis_result, a, None)
-                print(f"On check {a} : {value}")
+                # print(f"On check {a} : {value}")
                 if value is not None:
                     return value
             return None
@@ -76,8 +76,6 @@ class BookingDialog(CancelAndHelpDialog):
         :return DialogTurnResult:
         """
         booking_details = step_context.options
-
-        print(booking_details)
 
         if booking_details.origin is None:
             message_text = "From what city will you be travelling?"
@@ -127,9 +125,8 @@ class BookingDialog(CancelAndHelpDialog):
         booking_details = step_context.options
 
         # Capture the response to the previous step's prompt
-        booking_details.openDate = step_context.result
-
-        print(booking_details)
+        if booking_details.openDate is None:
+            booking_details.openDate = step_context.result
 
         if booking_details.destination is None:
             message_text = "Where would you like to travel to?"
@@ -179,9 +176,8 @@ class BookingDialog(CancelAndHelpDialog):
         booking_details = step_context.options
 
         # Capture the results of the previous step
-        booking_details.closeDate = step_context.result
-
-        print(booking_details)
+        if booking_details.closeDate is None:
+            booking_details.closeDate = step_context.result
 
         if booking_details.budget is None:
             message_text = "What is your budget for this travel?"
@@ -204,9 +200,8 @@ class BookingDialog(CancelAndHelpDialog):
         booking_details = step_context.options
 
         # Capture the results of the previous step
-        booking_details.budget = step_context.result
-
-        print(booking_details)
+        if booking_details.budget is None:
+            booking_details.budget = step_context.result
 
         message_text = (
             f"Please confirm, I have you traveling \n\n"
