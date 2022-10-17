@@ -59,6 +59,7 @@ class BookingDialog(CancelAndHelpDialog):
 
     async def parseLuis(self, attr, text):
         intent, luis_result = await self.callLuis(text)
+        # print("Luis_result:", luis_result)
         if type(attr) == list:
             for a in attr:
                 value = getattr(luis_result, a, None)
@@ -199,10 +200,21 @@ class BookingDialog(CancelAndHelpDialog):
         """
         booking_details = step_context.options
 
-        # Capture the results of the previous step
+        # Ask LUIS.ai to check the previous answer (if the field is empty)
         if booking_details.budget is None:
-            booking_details.budget = step_context.result
+            budget_value = step_context.result
+            booking_details.budget = await self.parseLuis(['budget'], budget_value)
+            booking_details.currency = await self.parseLuis(['currency'], budget_value)
 
+        if booking_details.currency in (None, ''):
+            booking_details.currency = "Euros"
+
+        # Ask again if the previous answer field is still empty
+        if booking_details.budget is None:
+            step_context.active_dialog.state["stepIndex"] = int(step_context.active_dialog.state["stepIndex"]) - 2
+            return await step_context.next(None)
+
+        # Print confirmation message
         message_text = (
             f"Please confirm, I have you traveling \n\n"
             f"- from: **{booking_details.origin}** to: **{booking_details.destination}** on: *{booking_details.openDate}* \n\n"
