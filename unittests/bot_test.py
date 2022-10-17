@@ -1,4 +1,5 @@
 
+import os
 import sys
 import pathlib
 # import pytest
@@ -52,6 +53,8 @@ class DialogTestClientTest(AsyncTestCase):
             initial_dialog_options=None,
             middlewares=[DialogTestLogger()],
         )
+
+        print("DEBUG ENV:", os.environ.get("X_TEST", "Bah non rien..."))
 
         in_From = "Let's start from Paris"
         in_To = "Can I go to London"
@@ -121,6 +124,8 @@ class DialogTestClientTest(AsyncTestCase):
             initial_dialog_options=None,
             middlewares=[DialogTestLogger()],
         )
+
+        print("DEBUG ENV:", os.environ.get("X_TEST", "Bah non rien..."))
 
         in_From = "Let's start from Paris"
         in_To = "Can I go to London"

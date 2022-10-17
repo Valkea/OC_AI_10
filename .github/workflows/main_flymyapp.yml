@@ -17,6 +17,7 @@ env:
 
 jobs:
   build:
+    environment: Production
     runs-on: ubuntu-latest
 
     steps:
@@ -39,6 +40,12 @@ jobs:
       - name: Run test suite
         run: |
           pytest unittests
+        env:
+          X_TEST: ${{ secrets.X_TEST }}
+          LUIS_APP_ID: ${{ secrets.LuisAppId }}
+          LUIS_API_KEY: ${{ secrets.LuisAPIKey }}
+          LUIS_API_HOST_NAME: ${{ secrets.LuisAPIHostName }}
+          APPINSIGHTS_INSTRUMENTATION_KEY: ${{ secrets.AppInsightsInstrumentationKey }}
       
       - name: Upload artifact for deployment jobs
         uses: actions/upload-artifact@v2
