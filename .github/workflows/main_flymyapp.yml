@@ -42,10 +42,10 @@ jobs:
           pytest unittests
         env:
           X_TEST: ${{ secrets.X_TEST }}
-          LUIS_APP_ID: ${{ secrets.LuisAppId }}
-          LUIS_API_KEY: ${{ secrets.LuisAPIKey }}
-          LUIS_API_HOST_NAME: ${{ secrets.LuisAPIHostName }}
-          APPINSIGHTS_INSTRUMENTATION_KEY: ${{ secrets.AppInsightsInstrumentationKey }}
+          LuisAppId: ${{ secrets.LUIS_APP_ID }}
+          LuisAPIKey: ${{ secrets.LUIS_API_KEY }}
+          LuisAPIHostName: ${{ secrets.LUIS_API_HOST_NAME }}
+          AppInsightsInstrumentationKey: ${{ secrets.APPINSIGHTS_INSTRUMENTATION_KEY }}
       
       - name: Upload artifact for deployment jobs
         uses: actions/upload-artifact@v2
