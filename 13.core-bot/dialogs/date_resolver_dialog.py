@@ -91,13 +91,13 @@ class DateResolverDialog(CancelAndHelpDialog):
 
 class openDateResolverDialog(DateResolverDialog):
     def __init__(self, dialog_id: str = None):
-        prompt_msg = "When will you start your travel ?"
+        prompt_msg = "When will you start your travel?"
         reprompt_msg = "I'm sorry, for best results, please enter your **outbound travel** date including the **month**, **day** and **year**."
         super().__init__(dialog_id, prompt_msg, reprompt_msg)
 
 
 class closeDateResolverDialog(DateResolverDialog):
     def __init__(self, dialog_id: str = None):
-        prompt_msg = "When will you come back ?"
+        prompt_msg = "When will you come back?"
         reprompt_msg = "I'm sorry, for best results, please enter your **return travel** date including the **month**, **day** and **year**."
         super().__init__(dialog_id, prompt_msg, reprompt_msg)
