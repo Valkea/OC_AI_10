@@ -1,9 +1,9 @@
 
-import os
 import sys
 import pathlib
 # import pytest
 import logging
+from datetime import date, timedelta
 
 from aiounittest import AsyncTestCase
 from botbuilder.testing import DialogTestClient, DialogTestLogger
@@ -29,7 +29,7 @@ from config import DefaultConfig
 from dialogs import MainDialog, BookingDialog
 from bots import DialogAndWelcomeBot
 
-CONFIG = DefaultConfig()
+
 
 class DialogTestClientTest(AsyncTestCase):
     """Tests for dialog test client."""
@@ -43,6 +43,7 @@ class DialogTestClientTest(AsyncTestCase):
         self.assertIsInstance(client, DialogTestClient)
 
     async def test_dialog_step_bystep_full_YES(self):
+        CONFIG = DefaultConfig()
         RECOGNIZER = FlightBookingRecognizer(CONFIG)
         BOOKING_DIALOG = BookingDialog()
         DIALOG = MainDialog(RECOGNIZER, BOOKING_DIALOG)
@@ -54,21 +55,19 @@ class DialogTestClientTest(AsyncTestCase):
             middlewares=[DialogTestLogger()],
         )
 
-        print("DEBUG ENV:", os.environ.get("X_TEST", "Bah non rien..."))
-
         in_From = "Let's start from Paris"
         in_To = "Can I go to London"
         in_openDate = "today"
         in_closeDate = "in 15 days"
-        in_budget = "No more than 1500€"
-        in_currency = ""
+        in_budget = "No more than 1500$"
+
 
         out_From = "Paris"
         out_To = "London"
-        out_openDate = "2022-10-17"
-        out_closeDate = "2022-11-01"
-        out_budget = in_budget  # TODO il faut s'occuper de cette partie dans le bot
-        out_currency = ""
+        out_openDate = date.today().strftime("%Y-%m-%d")
+        out_closeDate = (date.today() + timedelta(days=15)).strftime("%Y-%m-%d")
+        out_budget = "1500"
+        out_currency = "Dollars"
 
         confirm_text1 = (
             f"Please confirm, I have you traveling \n\n"
@@ -114,6 +113,7 @@ class DialogTestClientTest(AsyncTestCase):
         # self.assertEqual(DialogTurnStatus.Complete, client.dialog_turn_result.status)
 
     async def test_dialog_step_bystep_full_NO(self):
+        CONFIG = DefaultConfig()
         RECOGNIZER = FlightBookingRecognizer(CONFIG)
         BOOKING_DIALOG = BookingDialog()
         DIALOG = MainDialog(RECOGNIZER, BOOKING_DIALOG)
@@ -125,21 +125,18 @@ class DialogTestClientTest(AsyncTestCase):
             middlewares=[DialogTestLogger()],
         )
 
-        print("DEBUG ENV:", os.environ.get("X_TEST", "Bah non rien..."))
-
         in_From = "Let's start from Paris"
         in_To = "Can I go to London"
         in_openDate = "today"
         in_closeDate = "in 15 days"
-        in_budget = "No more than 1500€"
-        in_currency = ""
+        in_budget = "No more than 1500£"
 
         out_From = "Paris"
         out_To = "London"
-        out_openDate = "2022-10-17"
-        out_closeDate = "2022-11-01"
-        out_budget = in_budget  # TODO il faut s'occuper de cette partie dans le bot
-        out_currency = ""
+        out_openDate = date.today().strftime("%Y-%m-%d")
+        out_closeDate = (date.today() + timedelta(days=15)).strftime("%Y-%m-%d")
+        out_budget = "1500"
+        out_currency = "Pounds"
 
         confirm_text1 = (
             f"Please confirm, I have you traveling \n\n"
@@ -176,6 +173,7 @@ class DialogTestClientTest(AsyncTestCase):
         # self.assertEqual(DialogTurnStatus.Complete, client.dialog_turn_result.status)
 
     async def test_dialog_step_bystep_full_YES_with_wrong_inputs(self):
+        CONFIG = DefaultConfig()
         RECOGNIZER = FlightBookingRecognizer(CONFIG)
         BOOKING_DIALOG = BookingDialog()
         DIALOG = MainDialog(RECOGNIZER, BOOKING_DIALOG)
@@ -192,14 +190,13 @@ class DialogTestClientTest(AsyncTestCase):
         in_openDate = "today"
         in_closeDate = "in 15 days"
         in_budget = "No more than 1500€"
-        in_currency = ""
 
         out_From = "Paris"
         out_To = "London"
-        out_openDate = "2022-10-17"
-        out_closeDate = "2022-11-01"
-        out_budget = in_budget  # TODO il faut s'occuper de cette partie dans le bot
-        out_currency = ""
+        out_openDate = date.today().strftime("%Y-%m-%d")
+        out_closeDate = (date.today() + timedelta(days=15)).strftime("%Y-%m-%d")
+        out_budget = "1500"
+        out_currency = "Euros"
 
         confirm_text1 = (
             f"Please confirm, I have you traveling \n\n"
@@ -251,6 +248,11 @@ class DialogTestClientTest(AsyncTestCase):
         self.assertEqual(reply.text, "I'm sorry, for best results, please enter your **return travel** date including the **month**, **day** and **year**.")
 
         reply = await client.send_activity(in_closeDate)
+        self.assertEqual(reply.text, "What is your budget for this travel?")
+
+        # Give wrong budget Answer
+        reply = await client.send_activity("NOT A BUDGET")
+        # Repeat the  previous question
         self.assertEqual(reply.text, "What is your budget for this travel?")
 
         reply = await client.send_activity(in_budget)
