@@ -1,6 +1,6 @@
-
 import sys
 import pathlib
+
 # import pytest
 import logging
 from datetime import date, timedelta
@@ -36,7 +36,7 @@ DEFAULT_DETAILS_INPUT = BookingDetails(
     destination="Can I go to London",
     openDate="today",
     closeDate="in 15 days",
-    budget="No more than 1500$"
+    budget="No more than 1500$",
 )
 
 DEFAULT_DETAILS_OUTPUT = BookingDetails(
@@ -49,14 +49,18 @@ DEFAULT_DETAILS_OUTPUT = BookingDetails(
 )
 
 
-class FakeDialog():
-
-    def __init__(self, in_dict=None, out_dict=None):
+class FakeDialog:
+    def __init__(
+        self,
+        in_details: BookingDetails = None,
+        out_details: BookingDetails = None,
+        prefiled_booking_details: BookingDetails = None,
+    ):
 
         CONFIG = DefaultConfig()
         RECOGNIZER = FlightBookingRecognizer(CONFIG)
         BOOKING_DIALOG = BookingDialog()
-        DIALOG = MainDialog(RECOGNIZER, BOOKING_DIALOG)
+        DIALOG = MainDialog(RECOGNIZER, BOOKING_DIALOG, prefiled_booking_details)
 
         self.client = DialogTestClient(
             "test",
@@ -65,14 +69,55 @@ class FakeDialog():
             middlewares=[DialogTestLogger()],
         )
 
-        self._in = in_dict
-        self._out = out_dict
+        self._in = in_details
+        self._out = out_details
 
         if self._in is None:
             self._in = deepcopy(DEFAULT_DETAILS_INPUT)
 
         if self._out is None:
             self._out = deepcopy(DEFAULT_DETAILS_OUTPUT)
+
+    def get_confirmation_text(self, _type_: int):
+
+        if _type_ == 1:
+            return (
+                f"Please confirm, I have you traveling \n\n"
+                f"- from: **{self._out.origin}** to: **{self._out.destination}** on: *{self._out.openDate}* \n\n"
+                f"- then from: **{self._out.destination}** to: **{self._out.origin}** on: *{self._out.closeDate}* \n\n"
+                f"with a budget of **{self._out.budget}** {self._out.currency}"
+                " (1) Yes or (2) No"
+            )
+        elif _type_ == 2:
+            return (
+                f"I have you booked to **{self._out.destination}** from **{self._out.origin}** on *{self._out.openDate}*\n\n"
+                f"then from **{self._out.destination}** to **{self._out.origin}** on *{self._out.closeDate}* \n\n"
+                f"for a budget of {self._out.budget} {self._out.currency}"
+            )
+
+    async def get_intro(self, refTestCase: AsyncTestCase):
+
+        reply = await self.client.send_activity("Hello")
+        refTestCase.assertEqual(reply.text, "What can I help you with today?")
+        reply = await self.client.send_activity("Book me a trip")
+
+        return reply
+
+    async def get_outro(
+        self, refTestCase: AsyncTestCase, last_answer: str, confirm: str = "Yes"
+    ):
+
+        reply = await self.client.send_activity(last_answer)
+        refTestCase.assertEqual(reply.text, self.get_confirmation_text(1))
+
+        if confirm == "Yes":
+            reply = await self.client.send_activity("Yes")
+            refTestCase.assertEqual(reply.text, self.get_confirmation_text(2))
+            reply = self.client.get_next_reply()
+        else:
+            reply = await self.client.send_activity("No")
+
+        refTestCase.assertEqual(reply.text, "What else can I do for you?")
 
 
 class DialogTestClientTest(AsyncTestCase):
@@ -86,37 +131,56 @@ class DialogTestClientTest(AsyncTestCase):
         client = DialogTestClient(channel_or_adapter="test", target_dialog=None)
         self.assertIsInstance(client, DialogTestClient)
 
-    # async def test_dialog_all_in_on_sentence(self):
-    #     # TODO
-    #     CONFIG = DefaultConfig()
-    #     RECOGNIZER = FlightBookingRecognizer(CONFIG)
-    #     BOOKING_DIALOG = BookingDialog()
-    #     BOOKING_DETAILS = BookingDetails(
-    #         destination="London",
-    #         origin="Paris",
-    #         budget=555,
-    #         currency="Euros",
-    #         openDate="2022-10-01",
-    #         # closeDate = "2022-10-10",
-    #     )
-    #     print("Debug:", BOOKING_DETAILS)
-    #     DIALOG = MainDialog(RECOGNIZER, BOOKING_DIALOG, BOOKING_DETAILS)
+    async def test_dialog_missing_origin(self):
 
-    #     client = DialogTestClient(
-    #         "test",
-    #         DIALOG,
-    #         initial_dialog_options=None,
-    #         middlewares=[DialogTestLogger()],
-    #     )
+        details = deepcopy(DEFAULT_DETAILS_OUTPUT)
+        details.origin = None
+        fd = FakeDialog(prefiled_booking_details=details)
 
-    #     reply = await client.send_activity("Hello")
-    #     self.assertEqual(reply.text, "What can I help you with today?")
+        reply = await fd.get_intro(self)
+        self.assertEqual(reply.text, "From what city will you be travelling?")
+        await fd.get_outro(self, fd._in.origin)
 
-    #     reply = await client.send_activity("Book me a trip")
-    #     self.assertEqual(reply.text, "When will you come back?")
+    async def test_dialog_missing_destination(self):
 
-    # async def test_dialog_step_by_step_straight_answers(self):
-    # TODO
+        details = deepcopy(DEFAULT_DETAILS_OUTPUT)
+        details.destination = None
+        fd = FakeDialog(prefiled_booking_details=details)
+
+        reply = await fd.get_intro(self)
+        self.assertEqual(reply.text, "Where would you like to travel to?")
+        await fd.get_outro(self, fd._in.destination)
+
+    async def test_dialog_missing_openDate(self):
+
+        details = deepcopy(DEFAULT_DETAILS_OUTPUT)
+        details.openDate = None
+        fd = FakeDialog(prefiled_booking_details=details)
+
+        reply = await fd.get_intro(self)
+        self.assertEqual(reply.text, "When will you start your travel?")
+        await fd.get_outro(self, fd._in.openDate)
+
+    async def test_dialog_missing_closeDate(self):
+
+        details = deepcopy(DEFAULT_DETAILS_OUTPUT)
+        details.closeDate = None
+        fd = FakeDialog(prefiled_booking_details=details)
+
+        reply = await fd.get_intro(self)
+        self.assertEqual(reply.text, "When will you come back?")
+        await fd.get_outro(self, fd._in.closeDate)
+
+    async def test_dialog_missing_budget(self):
+
+        details = deepcopy(DEFAULT_DETAILS_OUTPUT)
+        details.budget = None
+        details.currency = None
+        fd = FakeDialog(prefiled_booking_details=details)
+
+        reply = await fd.get_intro(self)
+        self.assertEqual(reply.text, "What is your budget for this travel?")
+        await fd.get_outro(self, fd._in.budget)
 
     # async def test_dialog_step_by_step_straight_answers(self):
     # TODO
@@ -128,24 +192,7 @@ class DialogTestClientTest(AsyncTestCase):
         fd._out.budget = "1500"
         fd._out.currency = "Dollars"
 
-        confirm_text1 = (
-            f"Please confirm, I have you traveling \n\n"
-            f"- from: **{fd._out.origin}** to: **{fd._out.destination}** on: *{fd._out.openDate}* \n\n"
-            f"- then from: **{fd._out.destination}** to: **{fd._out.origin}** on: *{fd._out.closeDate}* \n\n"
-            f"with a budget of **{fd._out.budget}** {fd._out.currency}"
-            " (1) Yes or (2) No"
-        )
-
-        confirm_text2 = (
-            f"I have you booked to **{fd._out.destination}** from **{fd._out.origin}** on *{fd._out.openDate}*\n\n"
-            f"then from **{fd._out.destination}** to **{fd._out.origin}** on *{fd._out.closeDate}* \n\n"
-            f"for a budget of {fd._out.budget} {fd._out.currency}"
-        )
-
-        reply = await fd.client.send_activity("Hello")
-        self.assertEqual(reply.text, "What can I help you with today?")
-
-        reply = await fd.client.send_activity("Book me a trip")
+        reply = await fd.get_intro(self)
         self.assertEqual(reply.text, "From what city will you be travelling?")
 
         reply = await fd.client.send_activity(fd._in.origin)
@@ -160,15 +207,7 @@ class DialogTestClientTest(AsyncTestCase):
         reply = await fd.client.send_activity(fd._in.closeDate)
         self.assertEqual(reply.text, "What is your budget for this travel?")
 
-        reply = await fd.client.send_activity(fd._in.budget)
-        self.assertEqual(reply.text, confirm_text1)
-
-        reply = await fd.client.send_activity("Yes")
-        self.assertEqual(reply.text, confirm_text2)
-
-        reply = fd.client.get_next_reply()
-        self.assertEqual(reply.text, "What else can I do for you?")
-
+        await fd.get_outro(self, fd._in.budget)
         # self.assertEqual(DialogTurnStatus.Complete, fd.client.dialog_turn_result.status)
 
     async def test_dialog_step_by_step_full_NO(self):
@@ -178,18 +217,7 @@ class DialogTestClientTest(AsyncTestCase):
         fd._out.budget = "1500"
         fd._out.currency = "Pounds"
 
-        confirm_text1 = (
-            f"Please confirm, I have you traveling \n\n"
-            f"- from: **{fd._out.origin}** to: **{fd._out.destination}** on: *{fd._out.openDate}* \n\n"
-            f"- then from: **{fd._out.destination}** to: **{fd._out.origin}** on: *{fd._out.closeDate}* \n\n"
-            f"with a budget of **{fd._out.budget}** {fd._out.currency}"
-            " (1) Yes or (2) No"
-        )
-
-        reply = await fd.client.send_activity("Hello")
-        self.assertEqual(reply.text, "What can I help you with today?")
-
-        reply = await fd.client.send_activity("Book me a trip")
+        reply = await fd.get_intro(self)
         self.assertEqual(reply.text, "From what city will you be travelling?")
 
         reply = await fd.client.send_activity(fd._in.origin)
@@ -204,12 +232,7 @@ class DialogTestClientTest(AsyncTestCase):
         reply = await fd.client.send_activity(fd._in.closeDate)
         self.assertEqual(reply.text, "What is your budget for this travel?")
 
-        reply = await fd.client.send_activity(fd._in.budget)
-        self.assertEqual(reply.text, confirm_text1)
-
-        reply = await fd.client.send_activity("No")
-        self.assertEqual(reply.text, "What else can I do for you?")
-
+        await fd.get_outro(self, fd._in.budget, confirm="No")
         # self.assertEqual(DialogTurnStatus.Complete, fd.client.dialog_turn_result.status)
 
     async def test_dialog_step_by_step_full_YES_with_wrong_inputs(self):
@@ -219,24 +242,7 @@ class DialogTestClientTest(AsyncTestCase):
         fd._out.budget = "1500"
         fd._out.currency = "Euros"
 
-        confirm_text1 = (
-            f"Please confirm, I have you traveling \n\n"
-            f"- from: **{fd._out.origin}** to: **{fd._out.destination}** on: *{fd._out.openDate}* \n\n"
-            f"- then from: **{fd._out.destination}** to: **{fd._out.origin}** on: *{fd._out.closeDate}* \n\n"
-            f"with a budget of **{fd._out.budget}** {fd._out.currency}"
-            " (1) Yes or (2) No"
-        )
-
-        confirm_text2 = (
-            f"I have you booked to **{fd._out.destination}** from **{fd._out.origin}** on *{fd._out.openDate}*\n\n"
-            f"then from **{fd._out.destination}** to **{fd._out.origin}** on *{fd._out.closeDate}* \n\n"
-            f"for a budget of {fd._out.budget} {fd._out.currency}"
-        )
-
-        reply = await fd.client.send_activity("Hello")
-        self.assertEqual(reply.text, "What can I help you with today?")
-
-        reply = await fd.client.send_activity("Book me a trip")
+        reply = await fd.get_intro(self)
         self.assertEqual(reply.text, "From what city will you be travelling?")
 
         # Give wrong origin Answer
@@ -276,13 +282,5 @@ class DialogTestClientTest(AsyncTestCase):
         # Repeat the  previous question
         self.assertEqual(reply.text, "What is your budget for this travel?")
 
-        reply = await fd.client.send_activity(fd._in.budget)
-        self.assertEqual(reply.text, confirm_text1)
-
-        reply = await fd.client.send_activity("Yes")
-        self.assertEqual(reply.text, confirm_text2)
-
-        reply = fd.client.get_next_reply()
-        self.assertEqual(reply.text, "What else can I do for you?")
-
+        await fd.get_outro(self, fd._in.budget)
         # self.assertEqual(DialogTurnStatus.Complete, fd.client.dialog_turn_result.status)
