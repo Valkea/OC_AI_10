@@ -20,6 +20,7 @@ from botbuilder.core import (
 )
 from botbuilder.core.integration import aiohttp_error_middleware
 from botbuilder.schema import Activity
+
 # from botbuilder.applicationinsights import ApplicationInsightsTelemetryClient # ICI
 # from botbuilder.integration.applicationinsights.aiohttp import (
 #     AiohttpTelemetryProcessor,
@@ -32,6 +33,10 @@ from bots import DialogAndWelcomeBot
 
 from adapter_with_error_handler import AdapterWithErrorHandler
 from flight_booking_recognizer import FlightBookingRecognizer
+
+import logging
+
+logging.basicConfig(level=logging.INFO)
 
 CONFIG = DefaultConfig()
 
@@ -70,13 +75,17 @@ BOT = DialogAndWelcomeBot(CONVERSATION_STATE, USER_STATE, DIALOG)
 
 # ===== Handle basic routes =====
 
+
 async def home(request):
     # return aiohttp_jinja2.render_template('home.html', request, {})
     return web.Response(
-            text='<h1>FlyMyBot is online</h1>You can POST to the BOT api here: /api/messages',
-        content_type='text/html')
+        text="<h1>FlyMyBot is online</h1>You can POST to the BOT api here: /api/messages",
+        content_type="text/html",
+    )
+
 
 # ===== Listen for incoming requests on /api/messages =====
+
 
 async def messages(req: Request) -> Response:
     # Main bot message handler.
@@ -96,25 +105,25 @@ async def messages(req: Request) -> Response:
 
 # ===== Handle Errors =====
 
+
 async def handle_404(request):
     # return aiohttp_jinja2.render_template('404.html', request, {})
-    return web.Response(
-        text='<h1>404 - HTTP Not Found</h1>',
-        content_type='text/html')
+    return web.Response(text="<h1>404 - HTTP Not Found</h1>", content_type="text/html")
 
 
 async def handle_405(request):
     # return aiohttp_jinja2.render_template('405.html', request, {})
     return web.Response(
-        text='<h1>405 - HTTP Method Not Allowed</h1><p>This API use POST calls</p>',
-        content_type='text/html')
+        text="<h1>405 - HTTP Method Not Allowed</h1><p>This API use POST calls</p>",
+        content_type="text/html",
+    )
 
 
 async def handle_500(request):
     # return aiohttp_jinja2.render_template('500.html', request, {})
     return web.Response(
-        text='<h1>500 - HTTP Internal Server Error</h1>',
-        content_type='text/html')
+        text="<h1>500 - HTTP Internal Server Error</h1>", content_type="text/html"
+    )
 
 
 def create_error_middleware(overrides):
@@ -139,16 +148,15 @@ def create_error_middleware(overrides):
 
 
 def setup_middlewares(app):
-    error_middleware = create_error_middleware({
-        404: handle_404,
-        405: handle_405,
-        500: handle_500
-    })
+    error_middleware = create_error_middleware(
+        {404: handle_404, 405: handle_405, 500: handle_500}
+    )
     app.middlewares.append(error_middleware)
     return app
 
 
 # ===== Init the aiohttp server =====
+
 
 def init_func(argv):
     APP = web.Application(middlewares=[aiohttp_error_middleware])

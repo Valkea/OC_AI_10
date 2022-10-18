@@ -19,7 +19,10 @@ from .booking_dialog import BookingDialog
 
 class MainDialog(ComponentDialog):
     def __init__(
-            self, luis_recognizer: FlightBookingRecognizer, booking_dialog: BookingDialog, booking_details: BookingDetails = None
+        self,
+        luis_recognizer: FlightBookingRecognizer,
+        booking_dialog: BookingDialog,
+        booking_details: BookingDetails = None,
     ):
         super(MainDialog, self).__init__(MainDialog.__name__)
 
@@ -74,7 +77,8 @@ class MainDialog(ComponentDialog):
 
             return await step_context.begin_dialog(
                 # self._booking_dialog_id, BookingDetails()
-                self._booking_dialog_id, self._booking_details
+                self._booking_dialog_id,
+                self._booking_details,
             )
 
         # Call LUIS and gather any potential booking details. (Note the TurnContext has the response to the prompt.)
@@ -98,9 +102,7 @@ class MainDialog(ComponentDialog):
             return await step_context.begin_dialog(self._booking_dialog_id, luis_result)
 
         if intent == Intent.GREET.value:
-            hello_text = (
-                "Well, hello there! What can I do for you?"
-            )
+            hello_text = "Well, hello there! What can I do for you?"
             hello_message = MessageFactory.text(
                 hello_text, hello_text, InputHints.ignoring_input
             )

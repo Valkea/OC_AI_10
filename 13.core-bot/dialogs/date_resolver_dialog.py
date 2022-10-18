@@ -16,7 +16,9 @@ from .cancel_and_help_dialog import CancelAndHelpDialog
 
 
 class DateResolverDialog(CancelAndHelpDialog):
-    def __init__(self, dialog_id: str = None, prompt_msg: str = None, reprompt_msg: str = None):
+    def __init__(
+        self, dialog_id: str = None, prompt_msg: str = None, reprompt_msg: str = None
+    ):
         super(DateResolverDialog, self).__init__(
             dialog_id or DateResolverDialog.__name__
         )

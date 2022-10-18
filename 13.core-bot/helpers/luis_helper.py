@@ -32,7 +32,8 @@ def top_intent(intents: Dict[Intent, dict]) -> TopIntent:
 class LuisHelper:
     @staticmethod
     async def execute_luis_query(
-        luis_recognizer: LuisRecognizer, turn_context: TurnContext) -> (Intent, object):
+        luis_recognizer: LuisRecognizer, turn_context: TurnContext
+    ) -> (Intent, object):
         """
         Returns an object with preformatted LUIS results for the bot's dialogs to consume.
         """
@@ -61,7 +62,9 @@ class LuisHelper:
                 # We need to get the result from the LUIS JSON which at every level returns an array.
 
                 # --- Entity:To ---
-                to_entities = recognizer_result.entities.get("$instance", {}).get("To", [])
+                to_entities = recognizer_result.entities.get("$instance", {}).get(
+                    "To", []
+                )
 
                 if len(to_entities) > 0:
 
@@ -74,7 +77,9 @@ class LuisHelper:
                         )
 
                 # --- Entity:From ---
-                from_entities = recognizer_result.entities.get("$instance", {}).get("From", [] )
+                from_entities = recognizer_result.entities.get("$instance", {}).get(
+                    "From", []
+                )
                 if len(from_entities) > 0:
 
                     # if recognizer_result.entities.get("From", [{"$instance": {}}])[0]["$instance"]:
@@ -86,30 +91,35 @@ class LuisHelper:
                         )
 
                 # --- Entity:budget ---
-                budget_entities = recognizer_result.entities.get("$instance", {}).get("budget", [])
-                money_entities = recognizer_result.entities.get('money', [])
+                budget_entities = recognizer_result.entities.get("$instance", {}).get(
+                    "budget", []
+                )
+                money_entities = recognizer_result.entities.get("money", [])
 
                 if len(budget_entities) > 0:
                     result.budget = budget_entities[0]["text"]
 
                     if len(money_entities) > 0:
-                        result.budget = money_entities[0]['number']
-                        result.currency = money_entities[0]['units']+"s"
+                        result.budget = money_entities[0]["number"]
+                        result.currency = money_entities[0]["units"] + "s"
 
                 # --- Entity:openDate ---
-                openDate_entities = recognizer_result.entities.get("$instance", {}).get("openDate", [] )
+                openDate_entities = recognizer_result.entities.get("$instance", {}).get(
+                    "openDate", []
+                )
                 if len(openDate_entities) > 0:
                     if recognizer_result.entities["openDate"]:
                         result.openDate = openDate_entities[0]["text"]
 
                 # --- Entity:closeDate ---
-                closeDate_entities = recognizer_result.entities.get("$instance", {}).get("closeDate", [] )
+                closeDate_entities = recognizer_result.entities.get(
+                    "$instance", {}
+                ).get("closeDate", [])
                 if len(closeDate_entities) > 0:
                     if recognizer_result.entities["closeDate"]:
                         result.closeDate = closeDate_entities[0]["text"]
 
                 print(f"result:{result}")
-
 
                 # --- Entity:datetime ---
                 # This value will be a TIMEX. And we are only interested in a Date so grab the first result and drop
@@ -126,7 +136,6 @@ class LuisHelper:
 
                 # else:
                 #     result.travel_date = None
-
 
         except Exception as exception:
             print(exception)

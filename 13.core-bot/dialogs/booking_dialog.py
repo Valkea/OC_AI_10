@@ -8,7 +8,11 @@ from botbuilder.dialogs.prompts import ConfirmPrompt, TextPrompt, PromptOptions
 from botbuilder.core import MessageFactory
 from botbuilder.schema import InputHints
 from .cancel_and_help_dialog import CancelAndHelpDialog
-from .date_resolver_dialog import DateResolverDialog, openDateResolverDialog, closeDateResolverDialog
+from .date_resolver_dialog import (
+    DateResolverDialog,
+    openDateResolverDialog,
+    closeDateResolverDialog,
+)
 
 from botbuilder.ai.luis import LuisRecognizer
 from helpers.luis_helper import LuisHelper, Intent
@@ -88,7 +92,9 @@ class BookingDialog(CancelAndHelpDialog):
             )
         return await step_context.next(booking_details.origin)
 
-    async def openDate_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
+    async def openDate_step(
+        self, step_context: WaterfallStepContext
+    ) -> DialogTurnResult:
         """
         If a departure date (openDate) has not been provided, prompt for one.
         :param step_context:
@@ -99,12 +105,14 @@ class BookingDialog(CancelAndHelpDialog):
         # Ask LUIS.ai to check the previous answer (if the field is empty)
         if booking_details.origin is None:
             origin_value = step_context.result
-            origin = await self.parseLuis(['origin', 'destination'], origin_value)
+            origin = await self.parseLuis(["origin", "destination"], origin_value)
             booking_details.origin = origin
 
         # Ask again if the previous answer field is still empty
         if booking_details.origin is None:
-            step_context.active_dialog.state["stepIndex"] = int(step_context.active_dialog.state["stepIndex"]) - 2
+            step_context.active_dialog.state["stepIndex"] = (
+                int(step_context.active_dialog.state["stepIndex"]) - 2
+            )
             return await step_context.next(None)
 
         # Ask the starting date
@@ -137,9 +145,12 @@ class BookingDialog(CancelAndHelpDialog):
             return await step_context.prompt(
                 TextPrompt.__name__, PromptOptions(prompt=prompt_message)
             )
+
         return await step_context.next(booking_details.destination)
 
-    async def closeDate_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
+    async def closeDate_step(
+        self, step_context: WaterfallStepContext
+    ) -> DialogTurnResult:
         """
         If a return date (closeDate) has not been provided, prompt for one.
         :param step_context:
@@ -150,25 +161,29 @@ class BookingDialog(CancelAndHelpDialog):
         # Ask LUIS.ai to check the previous answer (if the field is empty)
         if booking_details.destination is None:
             destination_value = step_context.result
-            destination = await self.parseLuis(['origin', 'destination'], destination_value)
+            destination = await self.parseLuis(
+                ["origin", "destination"], destination_value
+            )
             booking_details.destination = destination
 
         # Ask again if the previous answer field is still empty
         if booking_details.destination is None:
-            step_context.active_dialog.state["stepIndex"] = int(step_context.active_dialog.state["stepIndex"]) - 2
+            step_context.active_dialog.state["stepIndex"] = (
+                int(step_context.active_dialog.state["stepIndex"]) - 2
+            )
             return await step_context.next(None)
 
         # Ask the starting date
-        if not booking_details.closeDate or self.is_ambiguous(booking_details.closeDate):
+        if not booking_details.closeDate or self.is_ambiguous(
+            booking_details.closeDate
+        ):
             return await step_context.begin_dialog(
                 closeDateResolverDialog.__name__, booking_details.closeDate
             )
 
         return await step_context.next(booking_details.closeDate)
 
-    async def budget_step(
-        self, step_context: WaterfallStepContext
-    ) -> DialogTurnResult:
+    async def budget_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
         """
         If a budget has not been provided, prompt for one.
         :param step_context:
@@ -188,6 +203,7 @@ class BookingDialog(CancelAndHelpDialog):
             return await step_context.prompt(
                 TextPrompt.__name__, PromptOptions(prompt=prompt_message)
             )
+
         return await step_context.next(booking_details.budget)
 
     async def confirm_step(
@@ -203,15 +219,17 @@ class BookingDialog(CancelAndHelpDialog):
         # Ask LUIS.ai to check the previous answer (if the field is empty)
         if booking_details.budget is None:
             budget_value = step_context.result
-            booking_details.budget = await self.parseLuis(['budget'], budget_value)
-            booking_details.currency = await self.parseLuis(['currency'], budget_value)
+            booking_details.budget = await self.parseLuis(["budget"], budget_value)
+            booking_details.currency = await self.parseLuis(["currency"], budget_value)
 
-        if booking_details.currency in (None, ''):
+        if booking_details.currency in (None, ""):
             booking_details.currency = "Euros"
 
         # Ask again if the previous answer field is still empty
         if booking_details.budget is None:
-            step_context.active_dialog.state["stepIndex"] = int(step_context.active_dialog.state["stepIndex"]) - 2
+            step_context.active_dialog.state["stepIndex"] = (
+                int(step_context.active_dialog.state["stepIndex"]) - 2
+            )
             return await step_context.next(None)
 
         # Print confirmation message
