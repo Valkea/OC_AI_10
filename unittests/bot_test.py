@@ -182,9 +182,6 @@ class DialogTestClientTest(AsyncTestCase):
         self.assertEqual(reply.text, "What is your budget for this travel?")
         await fd.get_outro(self, fd._in.budget)
 
-    # async def test_dialog_step_by_step_straight_answers(self):
-    # TODO
-
     async def test_dialog_step_by_step_full_YES(self):
 
         fd = FakeDialog()
@@ -280,6 +277,37 @@ class DialogTestClientTest(AsyncTestCase):
         # Give wrong budget Answer
         reply = await fd.client.send_activity("NOT A BUDGET")
         # Repeat the  previous question
+        self.assertEqual(reply.text, "What is your budget for this travel?")
+
+        await fd.get_outro(self, fd._in.budget)
+        # self.assertEqual(DialogTurnStatus.Complete, fd.client.dialog_turn_result.status)
+
+    async def test_dialog_step_by_step_straight_answers(self):
+
+        straight_imputs = BookingDetails(
+            origin="Paris",
+            destination="London",
+            openDate=date.today().strftime("%Y-%m-%d"),
+            closeDate=(date.today() + timedelta(days=15)).strftime("%Y-%m-%d"),
+            budget="1500",
+        )
+
+        fd = FakeDialog(in_details=straight_imputs)
+        fd._out.currency = "Euros"
+
+        reply = await fd.get_intro(self)
+        self.assertEqual(reply.text, "From what city will you be travelling?")
+
+        reply = await fd.client.send_activity(fd._in.origin)
+        self.assertEqual(reply.text, "When will you start your travel?")
+
+        reply = await fd.client.send_activity(fd._in.openDate)
+        self.assertEqual(reply.text, "Where would you like to travel to?")
+
+        reply = await fd.client.send_activity(fd._in.destination)
+        self.assertEqual(reply.text, "When will you come back?")
+
+        reply = await fd.client.send_activity(fd._in.closeDate)
         self.assertEqual(reply.text, "What is your budget for this travel?")
 
         await fd.get_outro(self, fd._in.budget)
