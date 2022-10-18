@@ -3,7 +3,7 @@
 
 from datatypes_date_time.timex import Timex
 
-from botbuilder.core import MessageFactory
+from botbuilder.core import MessageFactory, BotTelemetryClient, NullTelemetryClient
 from botbuilder.dialogs import WaterfallDialog, DialogTurnResult, WaterfallStepContext
 from botbuilder.dialogs.prompts import (
     DateTimePrompt,
@@ -17,22 +17,29 @@ from .cancel_and_help_dialog import CancelAndHelpDialog
 
 class DateResolverDialog(CancelAndHelpDialog):
     def __init__(
-        self, dialog_id: str = None, prompt_msg: str = None, reprompt_msg: str = None
+        self,
+        dialog_id: str = None,
+        telemetry_client: BotTelemetryClient = NullTelemetryClient(),
+        prompt_msg: str = None,
+        reprompt_msg: str = None,
     ):
         super(DateResolverDialog, self).__init__(
-            dialog_id or DateResolverDialog.__name__
+            dialog_id or DateResolverDialog.__name__, telemetry_client
         )
+        self.telemetry_client = telemetry_client
 
-        self.add_dialog(
-            DateTimePrompt(
-                DateTimePrompt.__name__, DateResolverDialog.datetime_prompt_validator
-            )
+        date_time_prompt = DateTimePrompt(
+            DateTimePrompt.__name__, DateResolverDialog.datetime_prompt_validator
         )
-        self.add_dialog(
-            WaterfallDialog(
-                WaterfallDialog.__name__ + "2", [self.initial_step, self.final_step]
-            )
+        date_time_prompt.telemetry_client = telemetry_client
+
+        waterfall_dialog = WaterfallDialog(
+            WaterfallDialog.__name__ + "2", [self.initial_step, self.final_step]
         )
+        waterfall_dialog.telemetry_client = telemetry_client
+
+        self.add_dialog(date_time_prompt)
+        self.add_dialog(waterfall_dialog)
 
         self.prompt_msg = prompt_msg
         self.reprompt_msg = reprompt_msg
@@ -92,14 +99,22 @@ class DateResolverDialog(CancelAndHelpDialog):
 
 
 class openDateResolverDialog(DateResolverDialog):
-    def __init__(self, dialog_id: str = None):
+    def __init__(
+        self,
+        dialog_id: str = None,
+        telemetry_client: BotTelemetryClient = NullTelemetryClient(),
+    ):
         prompt_msg = "When will you start your travel?"
         reprompt_msg = "I'm sorry, for best results, please enter your **outbound travel** date including the **month**, **day** and **year**."
-        super().__init__(dialog_id, prompt_msg, reprompt_msg)
+        super().__init__(dialog_id, telemetry_client, prompt_msg, reprompt_msg)
 
 
 class closeDateResolverDialog(DateResolverDialog):
-    def __init__(self, dialog_id: str = None):
+    def __init__(
+        self,
+        dialog_id: str = None,
+        telemetry_client: BotTelemetryClient = NullTelemetryClient(),
+    ):
         prompt_msg = "When will you come back?"
         reprompt_msg = "I'm sorry, for best results, please enter your **return travel** date including the **month**, **day** and **year**."
-        super().__init__(dialog_id, prompt_msg, reprompt_msg)
+        super().__init__(dialog_id, telemetry_client, prompt_msg, reprompt_msg)

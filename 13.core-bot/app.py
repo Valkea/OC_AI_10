@@ -16,16 +16,17 @@ from botbuilder.core import (
     BotFrameworkAdapterSettings,
     ConversationState,
     MemoryStorage,
-    UserState,  # TelemetryLoggerMiddleware,  # ICI
+    UserState,
+    TelemetryLoggerMiddleware,
 )
 from botbuilder.core.integration import aiohttp_error_middleware
 from botbuilder.schema import Activity
 
-# from botbuilder.applicationinsights import ApplicationInsightsTelemetryClient # ICI
-# from botbuilder.integration.applicationinsights.aiohttp import (
-#     AiohttpTelemetryProcessor,
-#     bot_telemetry_middleware,
-# ) # ICI
+from botbuilder.applicationinsights import ApplicationInsightsTelemetryClient
+from botbuilder.integration.applicationinsights.aiohttp import (
+    AiohttpTelemetryProcessor,
+    bot_telemetry_middleware,
+)
 
 from config import DefaultConfig
 from dialogs import MainDialog, BookingDialog
@@ -35,7 +36,6 @@ from adapter_with_error_handler import AdapterWithErrorHandler
 from flight_booking_recognizer import FlightBookingRecognizer
 
 import logging
-
 logging.basicConfig(level=logging.INFO)
 
 CONFIG = DefaultConfig()
@@ -53,25 +53,31 @@ CONVERSATION_STATE = ConversationState(MEMORY)
 # See https://aka.ms/about-bot-adapter to learn more about how bots work.
 ADAPTER = AdapterWithErrorHandler(SETTINGS, CONVERSATION_STATE)
 
-# Create telemetry client.
+# ===== Enable Azure Insights Telemetry =====
 # Note the small 'client_queue_size'.  This is for demonstration purposes.  Larger queue sizes
 # result in fewer calls to ApplicationInsights, improving bot performance at the expense of
 # less frequent updates.
-# INSTRUMENTATION_KEY = CONFIG.APPINSIGHTS_INSTRUMENTATION_KEY
-# TELEMETRY_CLIENT = ApplicationInsightsTelemetryClient(
-#     INSTRUMENTATION_KEY, telemetry_processor=AiohttpTelemetryProcessor(), client_queue_size=10
-# )
+INSTRUMENTATION_KEY = CONFIG.APPINSIGHTS_INSTRUMENTATION_KEY
+TELEMETRY_CLIENT = ApplicationInsightsTelemetryClient(
+    INSTRUMENTATION_KEY,
+    telemetry_processor=AiohttpTelemetryProcessor(),
+    client_queue_size=10,  # <---⚠️
+)
 
-# Code for enabling activity and personal information logging.
+# ===== Enable personal information logging & telemetry =====
 # It is **important** to note that due to privacy concerns, in a real-world application you must obtain user consent prior to logging this information.
-# TELEMETRY_LOGGER_MIDDLEWARE = TelemetryLoggerMiddleware(telemetry_client=TELEMETRY_CLIENT, log_personal_information=True)
-# ADAPTER.use(TELEMETRY_LOGGER_MIDDLEWARE)
+TELEMETRY_LOGGER_MIDDLEWARE = TelemetryLoggerMiddleware(
+    telemetry_client=TELEMETRY_CLIENT, log_personal_information=True
+)
+ADAPTER.use(TELEMETRY_LOGGER_MIDDLEWARE)
 
-# Create dialogs and Bot
+# ===== Create dialogs and Bot =====
+
 RECOGNIZER = FlightBookingRecognizer(CONFIG)
 BOOKING_DIALOG = BookingDialog()
-DIALOG = MainDialog(RECOGNIZER, BOOKING_DIALOG)
-BOT = DialogAndWelcomeBot(CONVERSATION_STATE, USER_STATE, DIALOG)
+DIALOG = MainDialog(RECOGNIZER, BOOKING_DIALOG, telemetry_client=TELEMETRY_CLIENT)
+BOT = DialogAndWelcomeBot(CONVERSATION_STATE, USER_STATE, DIALOG, TELEMETRY_CLIENT)
+
 
 # ===== Handle basic routes =====
 
@@ -159,7 +165,9 @@ def setup_middlewares(app):
 
 
 def init_func(argv):
-    APP = web.Application(middlewares=[aiohttp_error_middleware])
+    APP = web.Application(
+        middlewares=[bot_telemetry_middleware, aiohttp_error_middleware]
+    )
     APP.router.add_post("/api/messages", messages)
     APP.router.add_get("", home)
     APP = setup_middlewares(APP)

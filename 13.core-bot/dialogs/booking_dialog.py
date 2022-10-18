@@ -5,7 +5,7 @@ from datatypes_date_time.timex import Timex
 
 from botbuilder.dialogs import WaterfallDialog, WaterfallStepContext, DialogTurnResult
 from botbuilder.dialogs.prompts import ConfirmPrompt, TextPrompt, PromptOptions
-from botbuilder.core import MessageFactory
+from botbuilder.core import MessageFactory, BotTelemetryClient, NullTelemetryClient
 from botbuilder.schema import InputHints
 from .cancel_and_help_dialog import CancelAndHelpDialog
 from .date_resolver_dialog import (
@@ -20,28 +20,38 @@ from botbuilder.core import TurnContext
 
 
 class BookingDialog(CancelAndHelpDialog):
-    def __init__(self, dialog_id: str = None):
-        super(BookingDialog, self).__init__(dialog_id or BookingDialog.__name__)
+    def __init__(
+        self,
+        dialog_id: str = None,
+        telemetry_client: BotTelemetryClient = NullTelemetryClient(),
+    ):
+        super(BookingDialog, self).__init__(
+            dialog_id or BookingDialog.__name__, telemetry_client
+        )
+        self.telemetry_client = telemetry_client
+        text_prompt = TextPrompt(TextPrompt.__name__)
+        text_prompt.telemetry_client = telemetry_client
 
-        self.add_dialog(TextPrompt(TextPrompt.__name__))
+        waterfall_dialog = WaterfallDialog(
+            WaterfallDialog.__name__,
+            [
+                self.origin_step,
+                self.openDate_step,
+                self.destination_step,
+                self.closeDate_step,
+                self.budget_step,
+                self.confirm_step,
+                self.final_step,
+            ],
+        )
+        waterfall_dialog.telemetry_client = telemetry_client
+
+        self.add_dialog(text_prompt)
         self.add_dialog(ConfirmPrompt(ConfirmPrompt.__name__))
         self.add_dialog(DateResolverDialog(DateResolverDialog.__name__))
         self.add_dialog(openDateResolverDialog(openDateResolverDialog.__name__))
         self.add_dialog(closeDateResolverDialog(closeDateResolverDialog.__name__))
-        self.add_dialog(
-            WaterfallDialog(
-                WaterfallDialog.__name__,
-                [
-                    self.origin_step,
-                    self.openDate_step,
-                    self.destination_step,
-                    self.closeDate_step,
-                    self.budget_step,
-                    self.confirm_step,
-                    self.final_step,
-                ],
-            )
-        )
+        self.add_dialog(waterfall_dialog)
 
         self.initial_dialog_id = WaterfallDialog.__name__
 
@@ -280,4 +290,3 @@ class BookingDialog(CancelAndHelpDialog):
     def is_ambiguous(self, timex: str) -> bool:
         timex_property = Timex(timex)
         return "definite" not in timex_property.types
-

@@ -1,6 +1,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
+from botbuilder.core import BotTelemetryClient, NullTelemetryClient
 from botbuilder.dialogs import (
     ComponentDialog,
     DialogContext,
@@ -12,8 +13,13 @@ from botbuilder.core import MessageFactory
 
 
 class CancelAndHelpDialog(ComponentDialog):
-    def __init__(self, dialog_id: str):
+    def __init__(
+        self,
+        dialog_id: str,
+        telemetry_client: BotTelemetryClient = NullTelemetryClient(),
+    ):
         super(CancelAndHelpDialog, self).__init__(dialog_id)
+        self.telemetry_client = telemetry_client
 
     async def on_continue_dialog(self, inner_dc: DialogContext) -> DialogTurnResult:
         result = await self.interrupt(inner_dc)
