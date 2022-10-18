@@ -17,15 +17,15 @@ emoji==1.7
 # because the 4.15 isn't available with pip
 # and because 4.14, 4.13 etc has a bug
 
--e 13.core-bot/libraries/botbuilder-schema
--e 13.core-bot/libraries/botframework-connector
--e 13.core-bot/libraries/botframework-streaming
--e 13.core-bot/libraries/botbuilder-core
--e 13.core-bot/libraries/botbuilder-ai
--e 13.core-bot/libraries/botbuilder-applicationinsights
--e 13.core-bot/libraries/botbuilder-dialogs
--e 13.core-bot/libraries/botbuilder-azure
--e 13.core-bot/libraries/botbuilder-integration-applicationinsights-aiohttp
--e 13.core-bot/libraries/botbuilder-adapters-slack
--e 13.core-bot/libraries/botbuilder-integration-aiohttp
--e 13.core-bot/libraries/botbuilder-testing
+-e fly-me-bot/libraries/botbuilder-schema
+-e fly-me-bot/libraries/botframework-connector
+-e fly-me-bot/libraries/botframework-streaming
+-e fly-me-bot/libraries/botbuilder-core
+-e fly-me-bot/libraries/botbuilder-ai
+-e fly-me-bot/libraries/botbuilder-applicationinsights
+-e fly-me-bot/libraries/botbuilder-dialogs
+-e fly-me-bot/libraries/botbuilder-azure
+-e fly-me-bot/libraries/botbuilder-integration-applicationinsights-aiohttp
+-e fly-me-bot/libraries/botbuilder-adapters-slack
+-e fly-me-bot/libraries/botbuilder-integration-aiohttp
+-e fly-me-bot/libraries/botbuilder-testing

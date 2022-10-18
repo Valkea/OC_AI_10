@@ -20,9 +20,9 @@ from botbuilder.dialogs import (
 )
 
 # current = pathlib.Path(__file__).parent.parent
-# libpath = current.joinpath("../13.core-bot/dialogs")
+# libpath = current.joinpath("../fly-me-bot/dialogs")
 
-libpath = pathlib.Path("13.core-bot")
+libpath = pathlib.Path("fly-me-bot")
 sys.path.append(str(libpath))
 
 from flight_booking_recognizer import FlightBookingRecognizer
