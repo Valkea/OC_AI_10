@@ -15,7 +15,7 @@ from .date_resolver_dialog import (
 )
 
 from botbuilder.ai.luis import LuisRecognizer
-from helpers.luis_helper import LuisHelper, Intent
+from helpers.luis_helper import LuisHelper
 from botbuilder.core import TurnContext
 
 
@@ -52,7 +52,7 @@ class BookingDialog(CancelAndHelpDialog):
         print("init_luis:", self.luis_recognizer, self.turn_context)
 
     async def callLuis(self, text):
-        # Call LUIS and gather any potential booking details. (Note the TurnContext has the response to the prompt.)
+        # Call LUIS and gather any potential booking details
         self.turn_context.activity.text = text
         intent, luis_result = await LuisHelper.execute_luis_query(
             self.luis_recognizer, self.turn_context
@@ -64,6 +64,7 @@ class BookingDialog(CancelAndHelpDialog):
     async def parseLuis(self, attr, text):
         intent, luis_result = await self.callLuis(text)
         # print("Luis_result:", luis_result)
+
         if type(attr) == list:
             for a in attr:
                 value = getattr(luis_result, a, None)
@@ -105,6 +106,10 @@ class BookingDialog(CancelAndHelpDialog):
         # Ask LUIS.ai to check the previous answer (if the field is empty)
         if booking_details.origin is None:
             origin_value = step_context.result
+
+            if len(origin_value.split()) == 1:
+                origin_value = f"From {origin_value}"
+
             origin = await self.parseLuis(["origin", "destination"], origin_value)
             booking_details.origin = origin
 
@@ -161,6 +166,10 @@ class BookingDialog(CancelAndHelpDialog):
         # Ask LUIS.ai to check the previous answer (if the field is empty)
         if booking_details.destination is None:
             destination_value = step_context.result
+
+            if len(destination_value.split()) == 1:
+                destination_value = f"To {destination_value}"
+
             destination = await self.parseLuis(
                 ["origin", "destination"], destination_value
             )
@@ -219,6 +228,14 @@ class BookingDialog(CancelAndHelpDialog):
         # Ask LUIS.ai to check the previous answer (if the field is empty)
         if booking_details.budget is None:
             budget_value = step_context.result
+
+            if type(budget_value) in [int, float]:
+                budget_value = f"{budget_value}€"
+
+            elif type(budget_value) == str:
+                if budget_value.isnumeric():
+                    budget_value = f"{budget_value}€"
+
             booking_details.budget = await self.parseLuis(["budget"], budget_value)
             booking_details.currency = await self.parseLuis(["currency"], budget_value)
 
@@ -263,3 +280,4 @@ class BookingDialog(CancelAndHelpDialog):
     def is_ambiguous(self, timex: str) -> bool:
         timex_property = Timex(timex)
         return "definite" not in timex_property.types
+
