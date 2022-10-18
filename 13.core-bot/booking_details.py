@@ -3,6 +3,7 @@
 
 from pprint import pprint
 
+
 class BookingDetails:
     def __init__(
         self,
@@ -26,3 +27,16 @@ class BookingDetails:
 
     def __str__(self):
         return str(vars(self))
+
+    def __eq__(self, other):
+        if not isinstance(other, BookingDetails):
+            return NotImplemented
+
+        return (
+            self.destination == other.destination
+            and self.origin == other.origin
+            and self.budget == other.budget
+            and self.currency == self.currency
+            and self.openDate == other.openDate
+            and self.closeDate == other.closeDate
+        )

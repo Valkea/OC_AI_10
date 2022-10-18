@@ -19,13 +19,19 @@ from .booking_dialog import BookingDialog
 
 class MainDialog(ComponentDialog):
     def __init__(
-        self, luis_recognizer: FlightBookingRecognizer, booking_dialog: BookingDialog
+            self, luis_recognizer: FlightBookingRecognizer, booking_dialog: BookingDialog, booking_details: BookingDetails = None
     ):
         super(MainDialog, self).__init__(MainDialog.__name__)
 
         self._luis_recognizer = luis_recognizer
         self._booking_dialog = booking_dialog
         self._booking_dialog_id = booking_dialog.id
+
+        if booking_details is None:
+            self._booking_details = BookingDetails()
+        else:
+            self._booking_details = booking_details
+        print("INIT details:", self._booking_details)
 
         self.add_dialog(TextPrompt(TextPrompt.__name__))
         self.add_dialog(booking_dialog)
@@ -62,16 +68,22 @@ class MainDialog(ComponentDialog):
         )
 
     async def act_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
+
         if not self._luis_recognizer.is_configured:
             # LUIS is not configured, we just run the BookingDialog path with an empty BookingDetailsInstance.
+
             return await step_context.begin_dialog(
-                self._booking_dialog_id, BookingDetails()
+                # self._booking_dialog_id, BookingDetails()
+                self._booking_dialog_id, self._booking_details
             )
 
         # Call LUIS and gather any potential booking details. (Note the TurnContext has the response to the prompt.)
         intent, luis_result = await LuisHelper.execute_luis_query(
             self._luis_recognizer, step_context.context
         )
+
+        if luis_result == BookingDetails():
+            luis_result = self._booking_details
 
         # Pass Luis to the booking dialog for further requests
         self._booking_dialog.init_luis(self._luis_recognizer, step_context.context)
@@ -93,7 +105,7 @@ class MainDialog(ComponentDialog):
                 hello_text, hello_text, InputHints.ignoring_input
             )
             await step_context.context.send_activity(hello_message)
-            #return await step_context.replace_dialog(self.id, hello_message)
+            # return await step_context.replace_dialog(self.id, hello_message)
 
         # if intent == Intent.GET_WEATHER.value:
         #    get_weather_text = "TODO: get weather flow here"
