@@ -144,15 +144,13 @@ class MainDialog(ComponentDialog):
     async def final_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
         # If the child dialog ("BookingDialog") was cancelled or the user failed to confirm,
         # the Result here will be null.
-        if step_context.result is not None:
+
+        if step_context.result is not None and step_context.context.activity.text == "Yes":
             result = step_context.result
 
             # Now we have all the booking details call the booking service.
-
             # If the call to the booking service was successful tell the user.
-            # time_property = Timex(result.travel_date)
-            # travel_date_msg = time_property.to_natural_language(datetime.now())
-            # msg_txt = f"I have you booked to {result.destination} from {result.origin} on {result.travel_date} for a budget of {result.budget} {result.currency}"
+
             msg_txt = (
                 f"I have you booked to **{result.destination}** from **{result.origin}** on *{result.openDate}*\n\n"
                 f"then from **{result.destination}** to **{result.origin}** on *{result.closeDate}* \n\n"
@@ -161,7 +159,9 @@ class MainDialog(ComponentDialog):
             message = MessageFactory.text(msg_txt, msg_txt, InputHints.ignoring_input)
             await step_context.context.send_activity(message)
 
-        else:  # No
+        elif step_context.context.activity.text == "No":
+
+            # If the user wasn't satified, raise an Insights alert with the conversation log
             print("ICI on veut envoyer une alerte avec le log de l'échange")
             self.telemetry_client.track_trace(
                 "Booking not confirmed",
