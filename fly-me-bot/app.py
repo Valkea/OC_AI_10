@@ -18,6 +18,8 @@ from botbuilder.core import (
     MemoryStorage,
     UserState,
     TelemetryLoggerMiddleware,
+    # TranscriptLoggerMiddleware,
+    # TranscriptLogger,
 )
 from botbuilder.core.integration import aiohttp_error_middleware
 from botbuilder.schema import Activity
@@ -35,14 +37,12 @@ from bots import DialogAndWelcomeBot
 from adapter_with_error_handler import AdapterWithErrorHandler
 from flight_booking_recognizer import FlightBookingRecognizer
 
+from applicationinsights import TelemetryClient
+from typing import Callable, Dict
+
 import logging
 logging.basicConfig(level=logging.INFO)
 
-CONFIG = DefaultConfig()
-
-# Create adapter.
-# See https://aka.ms/about-bot-adapter to learn more about how bots work.
-SETTINGS = BotFrameworkAdapterSettings(CONFIG.APP_ID, CONFIG.APP_PASSWORD)
 
 # Create MemoryStorage, UserState and ConversationState
 MEMORY = MemoryStorage()
@@ -51,25 +51,65 @@ CONVERSATION_STATE = ConversationState(MEMORY)
 
 # Create adapter.
 # See https://aka.ms/about-bot-adapter to learn more about how bots work.
+CONFIG = DefaultConfig()
+SETTINGS = BotFrameworkAdapterSettings(CONFIG.APP_ID, CONFIG.APP_PASSWORD)
 ADAPTER = AdapterWithErrorHandler(SETTINGS, CONVERSATION_STATE)
 
 # ===== Enable Azure Insights Telemetry =====
 # Note the small 'client_queue_size'.  This is for demonstration purposes.  Larger queue sizes
 # result in fewer calls to ApplicationInsights, improving bot performance at the expense of
 # less frequent updates.
+
+
+class ApplicationInsightsTelemetryClientHook(ApplicationInsightsTelemetryClient):
+    def __init__(
+        self,
+        instrumentation_key: str,
+        telemetry_client: TelemetryClient = None,
+        telemetry_processor: Callable[[object, object], bool] = None,
+        client_queue_size: int = None,
+    ):
+        super().__init__(instrumentation_key, telemetry_client, telemetry_processor, client_queue_size)
+        self.clear_history()
+
+    def track_event(
+        self,
+        name: str,
+        properties: Dict[str, object] = None,
+        measurements: Dict[str, object] = None,
+    ) -> None:
+        """ Overwrite the track_event function in order to catch Bot & User messages """
+        super().track_event(name, properties, measurements)
+        if 'text' in properties:
+            self.history[len(self.history)] = (properties['fromName'], properties['text'])
+
+    def track_failure(self, name, severity=logging.WARNING):
+        """ Create a new tracking function to easily send warning with history """
+        properties = self.history
+        logging.warn(f"FAILURE: {name} {properties}")
+        super().track_trace(name, properties, severity)
+        super().flush()
+
+    def clear_history(self):
+        self.history = {}
+
+
 INSTRUMENTATION_KEY = CONFIG.APPINSIGHTS_INSTRUMENTATION_KEY
-TELEMETRY_CLIENT = ApplicationInsightsTelemetryClient(
+TELEMETRY_CLIENT = ApplicationInsightsTelemetryClientHook(
     INSTRUMENTATION_KEY,
     telemetry_processor=AiohttpTelemetryProcessor(),
     client_queue_size=10,  # <---⚠️
 )
 
 # ===== Enable personal information logging & telemetry =====
+
 # It is **important** to note that due to privacy concerns, in a real-world application you must obtain user consent prior to logging this information.
+
 TELEMETRY_LOGGER_MIDDLEWARE = TelemetryLoggerMiddleware(
     telemetry_client=TELEMETRY_CLIENT, log_personal_information=True
 )
 ADAPTER.use(TELEMETRY_LOGGER_MIDDLEWARE)
+
 
 # ===== Create dialogs and Bot =====
 
