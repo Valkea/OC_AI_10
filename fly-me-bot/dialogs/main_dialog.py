@@ -1,6 +1,8 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
+import logging
+
 from botbuilder.dialogs import (
     ComponentDialog,
     WaterfallDialog,
@@ -158,6 +160,14 @@ class MainDialog(ComponentDialog):
             )
             message = MessageFactory.text(msg_txt, msg_txt, InputHints.ignoring_input)
             await step_context.context.send_activity(message)
+
+        else:  # No
+            print("ICI on veut envoyer une alerte avec le log de l'échange")
+            self.telemetry_client.track_trace(
+                "Booking not confirmed",
+                {'test': 'abc'},
+                logging.WARNING
+            )
 
         prompt_message = "What else can I do for you?"
         return await step_context.replace_dialog(self.id, prompt_message)
