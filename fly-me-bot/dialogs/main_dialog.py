@@ -162,9 +162,12 @@ class MainDialog(ComponentDialog):
         elif step_context.context.activity.text == "No":
 
             # If the user wasn't satified, raise an Insights alert with the conversation log
-            self.telemetry_client.track_failure("Booking not confirmed")
+            if type(self.telemetry_client) != NullTelemetryClient:
+                self.telemetry_client.track_failure("Booking not confirmed")
 
-        self.telemetry_client.clear_history()
+        if type(self.telemetry_client) != NullTelemetryClient:
+            self.telemetry_client.clear_history()
+
         prompt_message = "What else can I do for you?"
         return await step_context.replace_dialog(self.id, prompt_message)
 
