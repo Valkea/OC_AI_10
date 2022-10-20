@@ -19,9 +19,10 @@ def retrieve_aiohttp_body():
 @middleware
 async def bot_telemetry_middleware(request, handler):
     """Process the incoming Flask request."""
-    if "application/json" in request.headers["Content-Type"]:
-        body = await request.json()
-        _REQUEST_BODIES[current_thread().ident] = body
+    if 'headers' in request:
+        if "application/json" in request.headers["Content-Type"]:
+            body = await request.json()
+            _REQUEST_BODIES[current_thread().ident] = body
 
     response = await handler(request)
     return response
