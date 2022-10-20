@@ -1,15 +1,13 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
-import logging
-
 from botbuilder.dialogs import (
     ComponentDialog,
     WaterfallDialog,
     WaterfallStepContext,
     DialogTurnResult,
 )
-from botbuilder.dialogs.prompts import TextPrompt, PromptOptions
+from botbuilder.dialogs.prompts import ConfirmPrompt, TextPrompt, PromptOptions
 from botbuilder.core import (
     MessageFactory,
     TurnContext,
@@ -41,7 +39,7 @@ class MainDialog(ComponentDialog):
         booking_dialog.telemetry_client = self.telemetry_client
 
         wf_dialog = WaterfallDialog(
-            "WFDialog", [self.intro_step, self.act_step, self.final_step]
+            "WFDialog", [self.intro_step, self.act_step, self.final_step, self.request_authorization_step]
         )
         wf_dialog.telemetry_client = self.telemetry_client
 
@@ -56,6 +54,7 @@ class MainDialog(ComponentDialog):
 
         self.add_dialog(text_prompt)
         self.add_dialog(booking_dialog)
+        self.add_dialog(ConfirmPrompt(ConfirmPrompt.__name__))
         self.add_dialog(wf_dialog)
 
         self.initial_dialog_id = "WFDialog"
@@ -85,6 +84,8 @@ class MainDialog(ComponentDialog):
         )
 
     async def act_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
+
+        self.failure_type = None
 
         if not self._luis_recognizer.is_configured:
             # LUIS is not configured, we just run the BookingDialog path with an empty BookingDetailsInstance.
@@ -139,12 +140,30 @@ class MainDialog(ComponentDialog):
             )
             await step_context.context.send_activity(didnt_understand_message)
 
+            if type(self.telemetry_client) != NullTelemetryClient:
+
+                max_misunderstanding = 3
+                self.telemetry_client.num_misunderstanding += 1
+
+                if self.telemetry_client.num_misunderstanding >= max_misunderstanding:
+
+                    msg_txt = (
+                        "We obviously have a communication problem... \n\n"
+                        "**Would you allow me to share our conversation with my administrators?**"
+                    )
+
+                    self.failure_type = f"Misunderstanding x {max_misunderstanding}"
+                    return await self.request_authorization_prompt(step_context, msg_txt)
+
         return await step_context.next(None)
 
     async def final_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
-        # If the child dialog ("BookingDialog") was cancelled or the user failed to confirm,
-        # the Result here will be null.
 
+        # If we had Misunderstanding failures, we pass it to the request_authorization_step
+        if self.failure_type is not None:
+            return await step_context.next(None)
+
+        # If the user completed the booking process, display the answer accordind to its final answer
         if step_context.result is not None and step_context.context.activity.text == "Yes":
             result = step_context.result
 
@@ -162,11 +181,39 @@ class MainDialog(ComponentDialog):
         elif step_context.context.activity.text == "No":
 
             # If the user wasn't satified, raise an Insights alert with the conversation log
-            if type(self.telemetry_client) != NullTelemetryClient:
-                self.telemetry_client.track_failure("Booking not confirmed")
+
+            msg_txt = (
+                "I have noticed that you are not satisfied with my proposal. \n\n"
+                "**Would you allow me to share our conversation with my administrators?**"
+            )
+
+            self.failure_type = "Booking not confirmed"
+            return await self.request_authorization_prompt(step_context, msg_txt)
+
+        step_context.context.activity.text = None
+        return await step_context.next(None)
+
+    async def request_authorization_prompt(self, step_context: WaterfallStepContext, msg_txt: str):
+
+        prompt_message = MessageFactory.text(
+            msg_txt, msg_txt, InputHints.expecting_input
+        )
+
+        # Offer a YES/NO prompt.
+        return await step_context.prompt(
+            ConfirmPrompt.__name__, PromptOptions(prompt=prompt_message)
+        )
+
+    async def request_authorization_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
+        # Request authorization to send the conversation history if needed
 
         if type(self.telemetry_client) != NullTelemetryClient:
-            self.telemetry_client.clear_history()
+
+            if step_context.context.activity.text == "Yes":
+                self.telemetry_client.track_failure(f"{self.failure_type} [with history]", history=True)
+
+            elif step_context.context.activity.text == "No":
+                self.telemetry_client.track_failure(f"{self.failure_type} [without history]", history=False)
 
         prompt_message = "What else can I do for you?"
         return await step_context.replace_dialog(self.id, prompt_message)
@@ -184,3 +231,4 @@ class MainDialog(ComponentDialog):
                 message_text, message_text, InputHints.ignoring_input
             )
             await context.send_activity(message)
+

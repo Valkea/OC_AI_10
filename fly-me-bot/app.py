@@ -70,7 +70,9 @@ class ApplicationInsightsTelemetryClientHook(ApplicationInsightsTelemetryClient)
         client_queue_size: int = None,
     ):
         super().__init__(instrumentation_key, telemetry_client, telemetry_processor, client_queue_size)
+
         self.clear_history()
+        self.clear_misunderstanding()
 
     def track_event(
         self,
@@ -83,15 +85,25 @@ class ApplicationInsightsTelemetryClientHook(ApplicationInsightsTelemetryClient)
         if 'text' in properties:
             self.history[len(self.history)] = (properties['fromName'], properties['text'])
 
-    def track_failure(self, name, severity=logging.WARNING):
+    def track_failure(self, name, severity=logging.WARNING, history=False):
         """ Create a new tracking function to easily send warning with history """
-        properties = self.history
+
+        if history:
+            properties = self.history
+        else:
+            properties = {'status': "The user didn't consent to share its conversation"}
+
         logging.warn(f"FAILURE: {name} {properties}")
         super().track_trace(name, properties, severity)
         super().flush()
+        self.clear_history()
+        self.clear_misunderstanding()
 
     def clear_history(self):
         self.history = {}
+
+    def clear_misunderstanding(self):
+        self.num_misunderstanding = 0
 
 
 INSTRUMENTATION_KEY = CONFIG.APPINSIGHTS_INSTRUMENTATION_KEY
@@ -221,3 +233,4 @@ if __name__ == "__main__":
         web.run_app(APP, host="localhost", port=CONFIG.PORT)
     except Exception as error:
         raise error
+

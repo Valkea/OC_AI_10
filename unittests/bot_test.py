@@ -116,6 +116,13 @@ class FakeDialog:
             reply = self.client.get_next_reply()
         else:
             reply = await self.client.send_activity("No")
+            msg = (
+                "I have noticed that you are not satisfied with my proposal. \n\n"
+                "**Would you allow me to share our conversation with my administrators?** "
+                "(1) Yes or (2) No"
+            )
+            refTestCase.assertEqual(reply.text, msg)
+            reply = await self.client.send_activity("No")
 
         refTestCase.assertEqual(reply.text, "What else can I do for you?")
 
