@@ -94,6 +94,8 @@ class FakeDialog:
                 f"then from **{self._out.destination}** to **{self._out.origin}** on *{self._out.closeDate}* \n\n"
                 f"for a budget of {self._out.budget} {self._out.currency}"
             )
+        elif _type_ == 3:
+            return "**I booked the following trip for you**"
 
     async def get_intro(self, refTestCase: AsyncTestCase):
 
@@ -112,7 +114,8 @@ class FakeDialog:
 
         if confirm == "Yes":
             reply = await self.client.send_activity("Yes")
-            # refTestCase.assertEqual(reply.text, self.get_confirmation_text(2))
+            refTestCase.assertEqual(reply.text, self.get_confirmation_text(3))
+            reply = self.client.get_next_reply()
             refTestCase.assertEqual(reply.text, None)  # <--- confirmation card
             reply = self.client.get_next_reply()
         else:
