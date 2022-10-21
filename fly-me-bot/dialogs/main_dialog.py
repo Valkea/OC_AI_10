@@ -1,6 +1,10 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
+import re
+import os
+import json
+
 from botbuilder.dialogs import (
     ComponentDialog,
     WaterfallDialog,
@@ -14,7 +18,7 @@ from botbuilder.core import (
     BotTelemetryClient,
     NullTelemetryClient,
 )
-from botbuilder.schema import InputHints
+from botbuilder.schema import InputHints, Attachment
 
 from booking_details import BookingDetails
 from flight_booking_recognizer import FlightBookingRecognizer
@@ -101,6 +105,7 @@ class MainDialog(ComponentDialog):
             self._luis_recognizer, step_context.context
         )
 
+        # If Luis didn't find any entity, grab the previous booking details
         if luis_result == BookingDetails():
             luis_result = self._booking_details
 
@@ -123,13 +128,6 @@ class MainDialog(ComponentDialog):
             )
             await step_context.context.send_activity(hello_message)
             # return await step_context.replace_dialog(self.id, hello_message)
-
-        # if intent == Intent.GET_WEATHER.value:
-        #    get_weather_text = "TODO: get weather flow here"
-        #    get_weather_message = MessageFactory.text(
-        #        get_weather_text, get_weather_text, InputHints.ignoring_input
-        #    )
-        #    await step_context.context.send_activity(get_weather_message)
 
         else:
             didnt_understand_text = (
@@ -165,18 +163,20 @@ class MainDialog(ComponentDialog):
 
         # If the user completed the booking process, display the answer accordind to its final answer
         if step_context.result is not None and step_context.context.activity.text == "Yes":
-            result = step_context.result
 
             # Now we have all the booking details call the booking service.
             # If the call to the booking service was successful tell the user.
 
-            msg_txt = (
-                f"I have you booked to **{result.destination}** from **{result.origin}** on *{result.openDate}*\n\n"
-                f"then from **{result.destination}** to **{result.origin}** on *{result.closeDate}* \n\n"
-                f"for a budget of {result.budget} {result.currency}"
-            )
-            message = MessageFactory.text(msg_txt, msg_txt, InputHints.ignoring_input)
-            await step_context.context.send_activity(message)
+            await self.show_confirmation(step_context)
+
+            # result = step_context.result
+            # msg_txt = (
+            #     f"I have you booked to **{result.destination}** from **{result.origin}** on *{result.openDate}*\n\n"
+            #     f"then from **{result.destination}** to **{result.origin}** on *{result.closeDate}* \n\n"
+            #     f"for a budget of {result.budget} {result.currency}"
+            # )
+            # message = MessageFactory.text(msg_txt, msg_txt, InputHints.ignoring_input)
+            # await step_context.context.send_activity(message)
 
         elif step_context.context.activity.text == "No":
 
@@ -231,4 +231,46 @@ class MainDialog(ComponentDialog):
                 message_text, message_text, InputHints.ignoring_input
             )
             await context.send_activity(message)
+
+    @staticmethod
+    async def show_confirmation(step_context: WaterfallStepContext):
+        card = MainDialog.create_confirmation_card(step_context)
+        response = MessageFactory.attachment(card)
+        await step_context.context.send_activity(response)
+
+    @staticmethod
+    def create_confirmation_card(step_context: WaterfallStepContext):
+
+        details = step_context.result
+
+        relative_path = os.path.abspath(os.path.dirname(__file__))
+        path = os.path.join(relative_path, "../cards/confirmationCard.json")
+        with open(path) as in_file:
+            card_template = json.load(in_file)
+
+        template_data = {
+            "origin": details.origin,
+            "destination": details.destination,
+            "origin_tag": details.origin.upper()[:3],
+            "destination_tag": details.destination.upper()[:3],
+            "openDate": details.openDate,
+            "closeDate": details.closeDate,
+            "budget": details.budget,
+            "currency": details.currency
+        }
+
+        card = MainDialog.replace_cards_entities(card_template, template_data)
+
+        return Attachment(
+            content_type="application/vnd.microsoft.card.adaptive", content=card
+        )
+
+    @staticmethod
+    def replace_cards_entities(template: dict, data: dict):
+        str_temp = str(template)
+        for key in data:
+            pattern = "\${" + key + "}"
+            str_temp = re.sub(pattern, str(data[key]), str_temp)
+        return eval(str_temp)
+
 
