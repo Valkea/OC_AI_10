@@ -121,13 +121,13 @@ class MainDialog(ComponentDialog):
             # Run the BookingDialog giving it whatever details we have from the LUIS call.
             return await step_context.begin_dialog(self._booking_dialog_id, luis_result)
 
-        if intent == Intent.GREET.value:
-            hello_text = "Well, hello there! What can I do for you?"
-            hello_message = MessageFactory.text(
-                hello_text, hello_text, InputHints.ignoring_input
-            )
-            await step_context.context.send_activity(hello_message)
-            # return await step_context.replace_dialog(self.id, hello_message)
+        elif intent == Intent.GREET.value:
+            text = "Well, hello there! 😀\n\n How can I help you?"
+            return await step_context.replace_dialog(self.id, text)
+
+        elif intent == Intent.QUIT.value:
+            text = "Thank you for visiting me, see you soon! 👋"
+            return await step_context.replace_dialog(self.id, text)
 
         else:
             didnt_understand_text = (
@@ -274,5 +274,4 @@ class MainDialog(ComponentDialog):
             pattern = "\${" + key + "}"
             str_temp = re.sub(pattern, str(data[key]), str_temp)
         return eval(str_temp)
-
 
