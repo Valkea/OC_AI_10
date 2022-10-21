@@ -1,6 +1,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
+import datetime
 from datatypes_date_time.timex import Timex
 
 from botbuilder.dialogs import WaterfallDialog, WaterfallStepContext, DialogTurnResult
@@ -65,7 +66,7 @@ class BookingDialog(CancelAndHelpDialog):
         # Call LUIS and gather any potential booking details
         self.turn_context.activity.text = text
         intent, luis_result = await LuisHelper.execute_luis_query(
-            self.luis_recognizer, self.turn_context
+            self.luis_recognizer, self.turn_context, check_intent=False
         )
 
         # print("answer:", intent, luis_result)
@@ -123,12 +124,10 @@ class BookingDialog(CancelAndHelpDialog):
             origin = await self.parseLuis(["origin", "destination"], origin_value)
             booking_details.origin = origin
 
-        # Ask again if the previous answer field is still empty
+        # Check if the answer is valid
+        await self.is_valid_origin(step_context)
         if booking_details.origin is None:
-            step_context.active_dialog.state["stepIndex"] = (
-                int(step_context.active_dialog.state["stepIndex"]) - 2
-            )
-            return await step_context.next(None)
+            return await BookingDialog.ask_again(step_context)
 
         # Ask the starting date
         if not booking_details.openDate or self.is_ambiguous(booking_details.openDate):
@@ -185,12 +184,10 @@ class BookingDialog(CancelAndHelpDialog):
             )
             booking_details.destination = destination
 
-        # Ask again if the previous answer field is still empty
+        # Check if the answer is valid
+        await self.is_valid_destination(step_context)
         if booking_details.destination is None:
-            step_context.active_dialog.state["stepIndex"] = (
-                int(step_context.active_dialog.state["stepIndex"]) - 2
-            )
-            return await step_context.next(None)
+            return await BookingDialog.ask_again(step_context)
 
         # Ask the starting date
         if not booking_details.closeDate or self.is_ambiguous(
@@ -214,6 +211,12 @@ class BookingDialog(CancelAndHelpDialog):
         if booking_details.closeDate is None:
             booking_details.closeDate = step_context.result
 
+        # Check if the answer is valid
+        await self.is_valid_closeDate(step_context)
+        if booking_details.closeDate is None:
+            return await BookingDialog.ask_again(step_context)
+
+        # Ask next question
         if booking_details.budget is None:
             message_text = "What is your budget for this travel?"
             prompt_message = MessageFactory.text(
@@ -252,12 +255,10 @@ class BookingDialog(CancelAndHelpDialog):
         if booking_details.currency in (None, ""):
             booking_details.currency = "Euros"
 
-        # Ask again if the previous answer field is still empty
+        # Check if the answer is valid
+        await self.is_valid_amount(step_context)
         if booking_details.budget is None:
-            step_context.active_dialog.state["stepIndex"] = (
-                int(step_context.active_dialog.state["stepIndex"]) - 2
-            )
-            return await step_context.next(None)
+            return await BookingDialog.ask_again(step_context)
 
         # Print confirmation message
         message_text = (
@@ -287,6 +288,66 @@ class BookingDialog(CancelAndHelpDialog):
             return await step_context.end_dialog(booking_details)
         return await step_context.end_dialog()
 
-    def is_ambiguous(self, timex: str) -> bool:
+    @staticmethod
+    def is_ambiguous(timex: str) -> bool:
         timex_property = Timex(timex)
         return "definite" not in timex_property.types
+
+    @staticmethod
+    async def is_valid_amount(step_context: WaterfallStepContext):
+        booking_details = step_context.options
+        if booking_details.budget:
+            if type(booking_details.budget) == str:
+                amount = booking_details.budget.replace(',', '.')
+                amount = float(''.join(c for c in amount if c.isdigit() or c in ['-', '.']))
+            else:
+                amount = booking_details.budget
+
+            if amount <= 0:
+                booking_details.budget = None
+                error_text = "This amount is not valid..."
+                error_message = MessageFactory.text(error_text, error_text, InputHints.ignoring_input)
+                await step_context.context.send_activity(error_message)
+
+    @staticmethod
+    async def is_valid_closeDate(step_context: WaterfallStepContext):
+
+        booking_details = step_context.options
+        if booking_details.closeDate and booking_details.openDate:
+            openDate = datetime.datetime.strptime(booking_details.openDate, "%Y-%m-%d")
+            closeDate = datetime.datetime.strptime(booking_details.closeDate, "%Y-%m-%d")
+
+            if openDate > closeDate:
+                booking_details.closeDate = None
+                error_text = "We don't offer time travel ⏱ ⌛ ⏰ ⌚ ⏲ 🕧, sorry... "
+                error_message = MessageFactory.text(error_text, error_text, InputHints.ignoring_input)
+                await step_context.context.send_activity(error_message)
+
+    @staticmethod
+    async def is_valid_origin(step_context: WaterfallStepContext):
+
+        booking_details = step_context.options
+        if booking_details.destination and booking_details.origin:
+            if booking_details.destination == booking_details.origin:
+                booking_details.origin = None
+                error_text = "Your origin and destination are the same... "
+                error_message = MessageFactory.text(error_text, error_text, InputHints.ignoring_input)
+                await step_context.context.send_activity(error_message)
+
+    @staticmethod
+    async def is_valid_destination(step_context: WaterfallStepContext):
+        booking_details = step_context.options
+        if booking_details.destination and booking_details.origin:
+            if booking_details.destination == booking_details.origin:
+                booking_details.destination = None
+                error_text = "Your origin and destination are the same... "
+                error_message = MessageFactory.text(error_text, error_text, InputHints.ignoring_input)
+                await step_context.context.send_activity(error_message)
+
+    @staticmethod
+    async def ask_again(step_context: WaterfallDialog):
+        step_context.active_dialog.state["stepIndex"] = (
+            int(step_context.active_dialog.state["stepIndex"]) - 2
+        )
+        return await step_context.next(None)
+
