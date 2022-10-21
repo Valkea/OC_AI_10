@@ -95,7 +95,7 @@ class FakeDialog:
                 f"for a budget of {self._out.budget} {self._out.currency}"
             )
         elif _type_ == 3:
-            return "**I booked the following trip for you**"
+            return "✅ **I booked the following trip for you** 🚀 "
 
     async def get_intro(self, refTestCase: AsyncTestCase):
 

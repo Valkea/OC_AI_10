@@ -167,14 +167,7 @@ class MainDialog(ComponentDialog):
             # Now we have all the booking details call the booking service.
             # If the call to the booking service was successful tell the user.
 
-            # result = step_context.result
-            # msg_txt = (
-            #     f"I have you booked to **{result.destination}** from **{result.origin}** on *{result.openDate}*\n\n"
-            #     f"then from **{result.destination}** to **{result.origin}** on *{result.closeDate}* \n\n"
-            #     f"for a budget of {result.budget} {result.currency}"
-            # )
-
-            msg_txt = "**I booked the following trip for you**"
+            msg_txt = "✅ **I booked the following trip for you** 🚀 "
             message = MessageFactory.text(msg_txt, msg_txt, InputHints.ignoring_input)
             await step_context.context.send_activity(message)
 
