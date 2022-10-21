@@ -112,7 +112,8 @@ class FakeDialog:
 
         if confirm == "Yes":
             reply = await self.client.send_activity("Yes")
-            refTestCase.assertEqual(reply.text, self.get_confirmation_text(2))
+            # refTestCase.assertEqual(reply.text, self.get_confirmation_text(2))
+            refTestCase.assertEqual(reply.text, None)  # <--- confirmation card
             reply = self.client.get_next_reply()
         else:
             reply = await self.client.send_activity("No")
