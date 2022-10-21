@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
-import datetime
+from datetime import date, datetime
 from datatypes_date_time.timex import Timex
 
 from botbuilder.dialogs import WaterfallDialog, WaterfallStepContext, DialogTurnResult
@@ -151,6 +151,12 @@ class BookingDialog(CancelAndHelpDialog):
         if booking_details.openDate is None:
             booking_details.openDate = step_context.result
 
+        # Check if the answer is valid
+        await self.is_valid_openDate(step_context)
+        if booking_details.openDate is None:
+            return await BookingDialog.ask_again(step_context)
+
+        # Ask next question
         if booking_details.destination is None:
             message_text = "Where would you like to travel to?"
             prompt_message = MessageFactory.text(
@@ -310,18 +316,50 @@ class BookingDialog(CancelAndHelpDialog):
                 await step_context.context.send_activity(error_message)
 
     @staticmethod
+    async def is_valid_openDate(step_context: WaterfallStepContext):
+
+        error_text = None
+        booking_details = step_context.options
+
+        if booking_details.openDate:
+            openDate = datetime.strptime(booking_details.openDate, "%Y-%m-%d").date()
+            now = datetime.now().date()
+
+            if openDate < now:
+                error_text = "We don't offer time travel ⏱ ⌛ ⏰ ⌚ ⏲ 🕧, sorry... "
+
+            elif booking_details.closeDate:
+                closeDate = datetime.strptime(booking_details.closeDate, "%Y-%m-%d").date()
+                if openDate > closeDate:
+                    error_text = "The return date cannot be earlier than the departure date ⌚"
+
+        if error_text is not None:
+            booking_details.openDate = None
+            error_message = MessageFactory.text(error_text, error_text, InputHints.ignoring_input)
+            await step_context.context.send_activity(error_message)
+
+    @staticmethod
     async def is_valid_closeDate(step_context: WaterfallStepContext):
 
+        error_text = None
         booking_details = step_context.options
-        if booking_details.closeDate and booking_details.openDate:
-            openDate = datetime.datetime.strptime(booking_details.openDate, "%Y-%m-%d")
-            closeDate = datetime.datetime.strptime(booking_details.closeDate, "%Y-%m-%d")
 
-            if openDate > closeDate:
-                booking_details.closeDate = None
+        if booking_details.closeDate:
+            closeDate = datetime.strptime(booking_details.closeDate, "%Y-%m-%d").date()
+            now = datetime.now().date()
+
+            if closeDate < now:
                 error_text = "We don't offer time travel ⏱ ⌛ ⏰ ⌚ ⏲ 🕧, sorry... "
-                error_message = MessageFactory.text(error_text, error_text, InputHints.ignoring_input)
-                await step_context.context.send_activity(error_message)
+
+            elif booking_details.openDate:
+                openDate = datetime.strptime(booking_details.openDate, "%Y-%m-%d").date()
+                if openDate > closeDate:
+                    error_text = "The return date cannot be earlier than the departure date ⌚"
+
+        if error_text is not None:
+            booking_details.closeDate = None
+            error_message = MessageFactory.text(error_text, error_text, InputHints.ignoring_input)
+            await step_context.context.send_activity(error_message)
 
     @staticmethod
     async def is_valid_origin(step_context: WaterfallStepContext):
