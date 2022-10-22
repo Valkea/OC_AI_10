@@ -5,17 +5,8 @@ datatypes-date-time>=1.0.0.a2
 pytest==6.2.3
 emoji==1.7
 
-
-# botbuilder-integration-aiohttp>=4.14.0
-# botbuilder-applicationinsights>=4.14.0
-# botbuilder-dialogs>=4.14.0
-# botbuilder-ai>=4.14.0
-# botbuilder-testing==4.14.2
-# botbuilder-integration-applicationinsights-aiohttp>=4.14.0
-
-# Install botbuilder 4.15 from local files
-# because the 4.15 isn't available with pip
-# and because 4.14, 4.13 etc has a bug
+# INSTALL BOTBUILDER 4.15 FROM LOCAL FILES
+# BECAUSE THE 4.15 ISN'T AVAILABLE WITH PIP
 
 -e fly-me-bot/libraries/botbuilder-schema
 -e fly-me-bot/libraries/botframework-connector
@@ -29,3 +20,16 @@ emoji==1.7
 -e fly-me-bot/libraries/botbuilder-adapters-slack
 -e fly-me-bot/libraries/botbuilder-integration-aiohttp
 -e fly-me-bot/libraries/botbuilder-testing
+
+# INSTEAD OF THE 4.14 (BELLOW)
+# BECAUSE 4.14, 4.13 ETC HAS A BUG
+
+# botbuilder-integration-aiohttp>=4.14.0
+# botbuilder-applicationinsights>=4.14.0
+# botbuilder-dialogs>=4.14.0
+# botbuilder-ai>=4.14.0
+# botbuilder-testing==4.14.2
+# botbuilder-integration-applicationinsights-aiohttp>=4.14.0
+
+# LIB REQUIRED FOR THE LUIS-SCRIPTS
+azure-cognitiveservices-language-luis
