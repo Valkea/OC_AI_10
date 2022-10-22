@@ -1,19 +1,26 @@
 #! /usr/bin/env python3
 # coding: utf-8
 
+import os
 import time
 import uuid
 import sys
 import json
+import pathlib
 
 from azure.cognitiveservices.language.luis.authoring import LUISAuthoringClient
-from azure.cognitiveservices.language.luis.authoring.models import ApplicationCreateObject, WordListObject
-from azure.cognitiveservices.language.luis.authoring.models._models_py3 import ErrorResponseException
+from azure.cognitiveservices.language.luis.authoring.models import (
+    ApplicationCreateObject,
+    WordListObject,
+)
+from azure.cognitiveservices.language.luis.authoring.models._models_py3 import (
+    ErrorResponseException,
+)
 from msrest.authentication import CognitiveServicesCredentials
 
 # IMPORT LUIS authoring KEY & ENDPOINT
 try:
-    with open("secrets.txt") as f:
+    with open(pathlib.Path(os.path.dirname(__file__), "secrets.txt")) as f:
         AUTHORING_KEY = f.readline().strip()
         AUTHORING_ENDPOINT = f.readline().strip()
 
@@ -57,7 +64,7 @@ class Authoring:
 
     def create_app(self, appName, versionId, culture):
 
-        print("Create Entities ", end='')
+        print("Create Entities ", end="")
 
         self.versionId = versionId
 
@@ -86,10 +93,27 @@ class Authoring:
 
         # --- Add Closed list entities
         airports = [
-            WordListObject(canonical_form='New York', list=['NY', "New York", "New-York", "NewYork", "new york", "new-york", "newyork", 'NEW YORK', 'NEW-YORK', 'NEWYORK']),
-            WordListObject(canonical_form='Paris', list=['paris', 'PARIS']),
-            WordListObject(canonical_form='London', list=['london', 'LONDON', 'Londres', 'londres', 'LONDRES']),
-            WordListObject(canonical_form='Milan', list=['milan', 'MILAN']),
+            WordListObject(
+                canonical_form="New York",
+                list=[
+                    "NY",
+                    "New York",
+                    "New-York",
+                    "NewYork",
+                    "new york",
+                    "new-york",
+                    "newyork",
+                    "NEW YORK",
+                    "NEW-YORK",
+                    "NEWYORK",
+                ],
+            ),
+            WordListObject(canonical_form="Paris", list=["paris", "PARIS"]),
+            WordListObject(
+                canonical_form="London",
+                list=["london", "LONDON", "Londres", "londres", "LONDRES"],
+            ),
+            WordListObject(canonical_form="Milan", list=["milan", "MILAN"]),
         ]
 
         self.client.model.add_closed_list(
@@ -122,45 +146,61 @@ class Authoring:
 
         # --- Add model as feature to subentity models
         self.client.features.add_entity_feature(
-            self.app_id, self.versionId, ent_From,
-            {"model_name": "geographyV2", "is_required": False}
+            self.app_id,
+            self.versionId,
+            ent_From,
+            {"model_name": "geographyV2", "is_required": False},
         )
 
         self.client.features.add_entity_feature(
-            self.app_id, self.versionId, ent_To,
-            {"model_name": "geographyV2", "is_required": False}
+            self.app_id,
+            self.versionId,
+            ent_To,
+            {"model_name": "geographyV2", "is_required": False},
         )
 
         self.client.features.add_entity_feature(
-            self.app_id, self.versionId, ent_openDate,
-            {"model_name": "datetimeV2", "is_required": False}
+            self.app_id,
+            self.versionId,
+            ent_openDate,
+            {"model_name": "datetimeV2", "is_required": False},
         )
 
         self.client.features.add_entity_feature(
-            self.app_id, self.versionId, ent_closeDate,
-            {"model_name": "datetimeV2", "is_required": False}
+            self.app_id,
+            self.versionId,
+            ent_closeDate,
+            {"model_name": "datetimeV2", "is_required": False},
         )
 
         self.client.features.add_entity_feature(
-            self.app_id, self.versionId, ent_budget,
-            {"model_name": "money", "is_required": False}
+            self.app_id,
+            self.versionId,
+            ent_budget,
+            {"model_name": "money", "is_required": False},
         )
 
         # --- Get entity and subentities & set features
-        modelObject = self.client.model.get_entity(self.app_id, self.versionId, ent_From)
+        modelObject = self.client.model.get_entity(
+            self.app_id, self.versionId, ent_From
+        )
         ent_FromAirport = get_grandchild_id(modelObject, "Airport").id
 
         self.client.features.add_entity_feature(
-            self.app_id, self.versionId, ent_FromAirport,
-            {"model_name": "Airport", "is_required": True}
+            self.app_id,
+            self.versionId,
+            ent_FromAirport,
+            {"model_name": "Airport", "is_required": True},
         )
 
         modelObject = self.client.model.get_entity(self.app_id, self.versionId, ent_To)
         ent_ToAirport = get_grandchild_id(modelObject, "Airport").id
 
         self.client.features.add_entity_feature(
-            self.app_id, self.versionId, ent_ToAirport,
-            {"model_name": "Airport", "is_required": True}
+            self.app_id,
+            self.versionId,
+            ent_ToAirport,
+            {"model_name": "Airport", "is_required": True},
         )
 
         # --- Add patterns
@@ -180,7 +220,7 @@ class Authoring:
 
     def _split_training_json(self, training_json, step_size=100):
         for index in range(0, len(training_json), step_size):
-            yield training_json[index:index+step_size]
+            yield training_json[index : index + step_size]
 
     def add_training(self, training_json):
 
@@ -200,7 +240,9 @@ class Authoring:
 
         batch_size = 100
         training_json = self._load_training_json(training_json_path)
-        for i, subbatch in enumerate(self._split_training_json(training_json, batch_size)):
+        for i, subbatch in enumerate(
+            self._split_training_json(training_json, batch_size)
+        ):
 
             print(f"--> send batch #{i} [from {i*batch_size} to {(i+1)*batch_size}]")
 
@@ -241,7 +283,7 @@ class Authoring:
         # Mark the app as public so we can query it using any prediction endpoint.
         # Note: For production scenarios, we need to use the LUIS prediction endpoint.
 
-        print("Publish ", end='', flush=True)
+        print("Publish ", end="", flush=True)
 
         try:
             self.client.apps.update_settings(self.app_id, is_public=True)
@@ -258,7 +300,9 @@ class Authoring:
 if __name__ == "__main__":
 
     if len(sys.argv) == 1:
-        print("Please provide the path to the JSON file containing the training uterrances")
+        print(
+            "Please provide the path to the JSON file containing the training uterrances"
+        )
         exit(0)
 
     authoring = Authoring()

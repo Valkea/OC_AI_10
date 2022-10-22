@@ -1,15 +1,17 @@
 #! /usr/bin/env python3
 # coding: utf-8
 
+import os
 import time
 import sys
 import requests
 import json
 import argparse
+import pathlib
 
 # IMPORT LUIS authoring KEY & ENDPOINT
 try:
-    with open("secrets.txt") as f:
+    with open(pathlib.Path(os.path.dirname(__file__), "secrets.txt")) as f:
         AUTHORING_KEY = f.readline().strip()
         AUTHORING_ENDPOINT = f.readline().strip()
         PREDICTION_KEY = f.readline().strip()
@@ -31,7 +33,7 @@ class Evaluating:
 
         self.headers = {
             "Content-Type": "application/json; charset=utf-8",
-            "Ocp-Apim-Subscription-Key": PREDICTION_KEY
+            "Ocp-Apim-Subscription-Key": PREDICTION_KEY,
         }
 
     def _load_json(self, training_json_path):
@@ -47,12 +49,16 @@ class Evaluating:
 
         print(f"Push a batch of validation samples from {validation_json_path}")
 
-        validation_json = {"LabeledTestSetUtterances": self._load_json(validation_json_path)}
+        validation_json = {
+            "LabeledTestSetUtterances": self._load_json(validation_json_path)
+        }
 
-        response = requests.post(self.base_url, headers=self.headers, json=validation_json)
+        response = requests.post(
+            self.base_url, headers=self.headers, json=validation_json
+        )
 
         if response:
-            self.operation_id = response.json()['operationId']
+            self.operation_id = response.json()["operationId"]
             print(f"OK --> operationId: {self.operation_id}")
             self.check_status()
             return True
@@ -68,10 +74,12 @@ class Evaluating:
         waiting = True
         while waiting:
 
-            response = requests.get(f"{self.base_url}/{self.operation_id}/status", headers=self.headers)
+            response = requests.get(
+                f"{self.base_url}/{self.operation_id}/status", headers=self.headers
+            )
 
             if response:
-                if response.json()['status'] == 'succeeded':
+                if response.json()["status"] == "succeeded":
                     print(" done!")
                     waiting = False
                 else:
@@ -87,7 +95,9 @@ class Evaluating:
 
         print("Fetch results")
 
-        response = requests.get(f"{self.base_url}/{self.operation_id}/result", headers=self.headers)
+        response = requests.get(
+            f"{self.base_url}/{self.operation_id}/result", headers=self.headers
+        )
 
         if response:
             print("--> JSON:")
@@ -102,8 +112,16 @@ class Evaluating:
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-p', "--valid_path", type=str, required=True, help="The path to the validation json faile")
-    parser.add_argument('--app_id', type=str, required=True, help="The LUIS.ai application ID")
+    parser.add_argument(
+        "-p",
+        "--valid_path",
+        type=str,
+        required=True,
+        help="The path to the validation json faile",
+    )
+    parser.add_argument(
+        "--app_id", type=str, required=True, help="The LUIS.ai application ID"
+    )
 
     args = parser.parse_args()
 
@@ -118,4 +136,3 @@ if __name__ == "__main__":
 
     evaluate = Evaluating(app_id)
     evaluate.send_batch(valid_path)
-

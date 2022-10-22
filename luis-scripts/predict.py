@@ -1,22 +1,26 @@
 #! /usr/bin/env python3
 # coding: utf-8
 
+import os
 import json
 import sys
 import argparse
+import pathlib
 
 from azure.cognitiveservices.language.luis.runtime import LUISRuntimeClient
 from msrest.authentication import CognitiveServicesCredentials
 
 # IMPORT LUIS prediction KEY & ENDPOINT
 try:
-    with open("secrets.txt") as f:
+    with open(pathlib.Path(os.path.dirname(__file__), "secrets.txt")) as f:
         AUTHORING_KEY = f.readline().strip()
         AUTHORING_ENDPOINT = f.readline().strip()
         PREDICTION_KEY = f.readline().strip()
         PREDICTION_ENDPOINT = f.readline().strip()
 except FileNotFoundError:
-    print("The secrets.txt file with the PREDICTION_KEY and PREDICTION_ENDPOINT is missing")
+    print(
+        "The secrets.txt file with the PREDICTION_KEY and PREDICTION_ENDPOINT is missing"
+    )
     exit(0)
 
 
@@ -56,8 +60,16 @@ def parseResponse(response):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-t', "--text", type=str, required=True, help="The text we want to send to LUIS.ai")
-    parser.add_argument('--app_id', type=str, required=True, help="The LUIS.ai application ID")
+    parser.add_argument(
+        "-t",
+        "--text",
+        type=str,
+        required=True,
+        help="The text we want to send to LUIS.ai",
+    )
+    parser.add_argument(
+        "--app_id", type=str, required=True, help="The LUIS.ai application ID"
+    )
 
     args = parser.parse_args()
 
