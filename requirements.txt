@@ -30,6 +30,3 @@ emoji==1.7
 # botbuilder-ai>=4.14.0
 # botbuilder-testing==4.14.2
 # botbuilder-integration-applicationinsights-aiohttp>=4.14.0
-
-# LIB REQUIRED FOR THE LUIS-SCRIPTS
-azure-cognitiveservices-language-luis
