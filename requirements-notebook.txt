@@ -1,0 +1,3 @@
+# LIB REQUIRED FOR THE Jupyter Notebook
+pandas
+numpy
